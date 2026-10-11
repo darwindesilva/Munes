@@ -21,6 +21,13 @@ public class BallController : MonoBehaviour
     public float groundCheckDistance = 1.2f;
     public LayerMask groundLayer;
 
+    private float justTookOffTimer;
+    private float justLandedTimer;
+
+    public bool IsGrounded => isGrounded;
+    public bool JustTookOff => justTookOffTimer > 0f;
+    public bool JustLanded => justLandedTimer > 0f;
+
     private Rigidbody rb;
     private RadialGravity gravity;
     private Vector3 gravityDir; // Direction of gravity (toward center)
@@ -77,12 +84,18 @@ public class BallController : MonoBehaviour
 
         if (isGrounded && !WasGroundedLastFrame)
         {
+            justLandedTimer = 0.15f;
             OnLanded();
         }
         if (!isGrounded && WasGroundedLastFrame)
         {
+            justTookOffTimer = 0.15f;
             OnTakeoff();
         }
+
+        // Decrement timers
+        if (justTookOffTimer > 0f) justTookOffTimer -= Time.fixedDeltaTime;
+        if (justLandedTimer > 0f) justLandedTimer -= Time.fixedDeltaTime;
 
         if (isGrounded)
         {
@@ -169,22 +182,27 @@ public class BallController : MonoBehaviour
     public float PredictTimeToLand()
     {
         if (isGrounded) return 0f;
+        if (gravity == null || gravity.sphereCenter == null) return -1f;
 
-        float distanceToSurface = Vector3.Distance(transform.position, gravity.sphereCenter.position);
-        float heightAboveSurface = distanceToSurface - 400f; // radius - height
+        Vector3 gDir = (transform.position - gravity.sphereCenter.position).normalized;
 
-        // Approximate: time = sqrt(2 * height / gravity) if falling straight down
-        // Plus current vertical velocity component
-        float verticalSpeed = Vector3.Dot(rb.linearVelocity, gravityDir);
+        float ballRadius = transform.localScale.x * 0.5f;
+        if (!Physics.Raycast(transform.position, gDir, out RaycastHit hit, 1000f, groundLayer))
+            return -1f; // no surface below us
 
-        // Solve: h = v0*t + 0.5*a*t^2 for t
-        float a = gravity.gravityStrength * 0.5f;
-        float b = verticalSpeed;
-        float c = -heightAboveSurface;
+        float distanceToSurface = hit.distance - ballRadius;
+        if (distanceToSurface < 0.05f) return 0f;
 
-        float discriminant = b * b - 4 * a * c;
-        if (discriminant < 0) return -1f;
+        // Ballistic solve: d = v0*t + 0.5*a*t^2, where v0 is velocity along gravity
+        float v0 = Vector3.Dot(rb.linearVelocity, gDir);
+        float a = gravity.gravityStrength * 0.5f; // half of gravity
+        float b = v0;
+        float c = -distanceToSurface;
 
-        return (-b + Mathf.Sqrt(discriminant)) / (2 * a);
+        float disc = b * b - 4f * a * c;
+        if (disc < 0f) return -1f;
+
+        float t = (-b + Mathf.Sqrt(disc)) / (2f * a);
+        return t > 0f ? t : 0f;
     }
 }

@@ -1,0 +1,147 @@
+// ============================================================
+// Munes Music v4 — real triads, verified chord output
+// ============================================================
+
+global float in_speed;
+global int   in_grounded;
+global int   in_takeoff;
+global int   in_landed;
+global float in_height;
+global float in_timeToLand;
+global int   in_quadrant;
+
+// ---- Voices ----
+// Use TriOsc for richer harmonics — makes intervals clearly audible
+TriOsc v1 => LPF f1 => ADSR e1 => dac;
+TriOsc v2 => LPF f2 => ADSR e2 => dac;
+TriOsc v3 => LPF f3 => ADSR e3 => dac;
+
+// Drone
+TriOsc drone => LPF droneFilt => dac;
+0.04 => drone.gain;
+
+// Reverb send
+JCRev rev => dac;
+0.25 => rev.mix;
+v1 => rev; v2 => rev; v3 => rev;
+
+// ---- Chord shapes as a 2D array ----
+// Index: 0=major, 1=minor, 2=sus4, 3=maj7, 4=min7
+[[0,4,7], [0,3,7], [0,5,7], [0,4,7], [0,3,7]] @=> int SHAPES[][];
+// We're using only the first 3 intervals of each; maj7/min7 use triad for now
+
+// ---- Chord progression: [chordType, rootMidi] ----
+// Avoid redundant shift — root MIDI alone determines pitch
+[[0, 48],   // I    C major, root C3
+ [1, 50],   // ii   D minor, root D3
+ [1, 52],   // iii  E minor, root E3
+ [0, 53],   // IV   F major, root F3
+ [0, 55],   // V    G major, root G3
+ [1, 57]]   // vi   A minor, root A3
+ @=> int PROG[][];
+
+// Transition matrix 6x6
+[[0.45, 0.15, 0.05, 0.20, 0.10, 0.05],
+ [0.20, 0.35, 0.10, 0.15, 0.15, 0.05],
+ [0.15, 0.15, 0.35, 0.10, 0.15, 0.10],
+ [0.30, 0.10, 0.05, 0.25, 0.25, 0.05],
+ [0.35, 0.05, 0.05, 0.15, 0.30, 0.10],
+ [0.25, 0.15, 0.05, 0.20, 0.15, 0.20]] @=> float trans[][];
+
+0 => int currentIdx;
+
+// ---- Play a chord ----
+fun void playChord(int idx, float vel, dur len) {
+    PROG[idx][0] => int type;       // chord type
+    PROG[idx][1] => int root;       // root MIDI
+
+    // Read intervals directly from the 2D array
+    SHAPES[type][0] => int i0;
+    SHAPES[type][1] => int i1;
+    SHAPES[type][2] => int i2;
+
+    // Voicing: bass note low, mid/high an octave above root
+    Std.mtof(root)      => v1.freq;  // root
+    Std.mtof(root + i1 + 12) => v2.freq;  // third + 1 octave
+    Std.mtof(root + i2 + 12) => v3.freq;  // fifth + 1 octave
+
+    // Drone one octave below root
+    Std.mtof(root - 12) => drone.freq;
+
+    // Gains
+    vel * 0.25 => v1.gain;
+    vel * 0.18 => v2.gain;
+    vel * 0.15 => v3.gain;
+
+    // Debug: print frequencies so we can see if they differ
+    <<< "playChord idx:", idx, "| type:", type, "| root:", root,
+        "| f1:", v1.freq(), "f2:", v2.freq(), "f3:", v3.freq() >>>;
+
+    e1.keyOn(); e2.keyOn(); e3.keyOn();
+    len => now;
+    e1.keyOff(); e2.keyOff(); e3.keyOff();
+}
+
+// ---- Advance Markov chain ----
+fun void advance() {
+    Math.random2f(0.0, 1.0) => float r;
+    0.0 => float cum;
+    for (0 => int i; i < 6; i++) {
+        trans[currentIdx][i] +=> cum;
+        if (r < cum) { i => currentIdx; return; }
+    }
+    0 => currentIdx;
+}
+
+// ---- Main loop ----
+now => time lastAuto;
+2.5::second => dur autoInterval;
+
+// Initial settings
+e1.attackTime(0.02::second);  e1.decayTime(0.15::second);
+e1.sustainLevel(0.7);         e1.releaseTime(0.6::second);
+e2.attackTime(0.02::second);  e2.decayTime(0.15::second);
+e2.sustainLevel(0.7);         e2.releaseTime(0.6::second);
+e3.attackTime(0.02::second);  e3.decayTime(0.15::second);
+e3.sustainLevel(0.7);         e3.releaseTime(0.6::second);
+
+<<< "=== Munes Music v4 starting ===" >>>;
+
+while (true) {
+    // Filter brightness from altitude
+    500 + (in_height * 2.0) => f1.freq;
+    800 + (in_height * 3.0) => f2.freq;
+    1200 + (in_height * 4.0) => f3.freq;
+    if (f1.freq() > 3000) { 3000 => f1.freq; }
+    if (f2.freq() > 5000) { 5000 => f2.freq; }
+    if (f3.freq() > 8000) { 8000 => f3.freq; }
+
+    // Envelope attack from speed (fast = snappier)
+    (0.005 + 0.06 / (in_speed + 1.0))::second => e1.attackTime;
+    (0.005 + 0.06 / (in_speed + 1.0))::second => e2.attackTime;
+    (0.005 + 0.06 / (in_speed + 1.0))::second => e3.attackTime;
+
+    // Drone filter
+    300 + (in_height * 1.5) => droneFilt.freq;
+    if (droneFilt.freq() > 1500) { 1500 => droneFilt.freq; }
+
+    // Autonomous chord
+    if (now - lastAuto > autoInterval) {
+        advance();
+        playChord(currentIdx, 0.5, 0.3::second);
+        now => lastAuto;
+    }
+
+    // Event chord
+    if (in_takeoff == 1 || in_landed == 1) {
+        advance();
+        playChord(currentIdx, 0.9, 0.5::second);
+        now => lastAuto;
+    }
+
+    // Drone level
+    if (in_grounded == 1) { 0.06 => drone.gain; }
+    else                  { 0.03 => drone.gain; }
+
+    50::ms => now;
+}
