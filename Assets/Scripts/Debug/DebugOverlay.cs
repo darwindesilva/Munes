@@ -57,6 +57,14 @@ public class DebugOverlay : MonoBehaviour
         sb.AppendLine($"Quadrant:     {q,7}");
         sb.AppendLine($"Takeoff flag: {ball.JustTookOff}");
         sb.AppendLine($"Landed flag:  {ball.JustLanded}");
+        var cam = Camera.main;
+        if (cam != null)
+        {
+            Vector3 e = cam.transform.eulerAngles;
+            float pitchSigned = e.x > 180f ? e.x - 360f : e.x;
+            sb.AppendLine($"Cam pitch:    {pitchSigned,7:F1}°");
+            sb.AppendLine($"Cam yaw:      {e.y,7:F1}°");
+        }
 
         // Layout: bottom-right corner
         float width = 260f;

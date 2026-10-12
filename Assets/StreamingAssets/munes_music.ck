@@ -26,7 +26,8 @@ global int   in_quadrant;
 400   => int   MIN_SLIDE_MS;
 10000 => int   MAX_SLIDE_MS;
 3     => int   OCTAVES;
-300   => int   MIN_AIRTIME_MS;
+100   => int   MIN_AIRTIME_MS;      // lowered — airtime alone isn't the gate anymore
+5.0   => float MIN_TRIGGER_HEIGHT;  // must exceed this altitude (meters) to commit
 
 // Fade-off: after a chord has been playing this long WHILE GROUNDED
 // (and grounded without further chord changes), silence all voices
@@ -81,7 +82,7 @@ global int   in_quadrant;
 [3, 2, 2, 2, 2, 2] @=> int SUCC_COUNTS[];
 [1, 2, 0, 0, 4, 0, 3, 5, 1, 1, 0, 2, 3] @=> int SUCC_TARGETS[];
 
-32 => int MAX_VOICES;
+64 => int MAX_VOICES;
 TriOsc voices[MAX_VOICES];
 LPF    filters[MAX_VOICES];
 
@@ -109,11 +110,11 @@ for (0 => int i; i < TOTAL_VOICES; i++) {
 0 => int currentChordInNode;
 0 => int currentChordIdx;
 
-float currentFreqs[32];
-float targetFreqs[32];
-float currentGains[32];
-float targetGains[32];
-float fadeMultiplier[32];    // per-voice 0..1 fade applied on top of gains
+float currentFreqs[64];
+float targetFreqs[64];
+float currentGains[64];
+float targetGains[64];
+float fadeMultiplier[64];
 
 int   sliding;
 int   slideElapsedMs;
@@ -268,11 +269,12 @@ while (true) {
         <<< "TAKEOFF armed (ttl≈", in_timeToLand, "s)" >>>;
     }
 
-    // ---- Airborne: commit once the min air time has elapsed, ONE TIME ONLY ----
+    // ---- Airborne: commit once we've cleared the altitude gate ----
     if (pendingChange == 1
         && sliding == 0
         && in_grounded == 0
-        && msSinceTakeoff >= MIN_AIRTIME_MS)
+        && msSinceTakeoff >= MIN_AIRTIME_MS
+        && in_height >= MIN_TRIGGER_HEIGHT)
     {
         // Advance within node
         currentChordInNode + 1 => int nextChordInNode;
@@ -295,8 +297,11 @@ while (true) {
 
     // ---- Landing: cancel pending if too short ----
     if (in_landed == 1) {
-        if (pendingChange == 1 && msSinceTakeoff < MIN_AIRTIME_MS) {
-            <<< "  short flight (", msSinceTakeoff, "ms) — change cancelled" >>>;
+        if (pendingChange == 1) {
+            // We reached landing with the change still pending — it never committed,
+            // meaning the altitude gate was never crossed.
+            <<< "  flight never reached height gate (max height ", in_height,
+                ") — change cancelled" >>>;
         }
         0 => pendingChange;
         0 => msSinceTakeoff;

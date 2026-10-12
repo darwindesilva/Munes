@@ -2,18 +2,17 @@
 """
 ChucK chord graph generator for Munes.
 
-Each node has:
-    - name
-    - a list of chords (each chord is a list of note names)
-    - a bass note
-    - a treble note (per node, not per chord for simplicity)
-    - successors (list of node names)
+Input: a list of node strings, one per line in the NODES list below.
+Format:
+    "name|note1,note2,note3|succ1,succ2|bass|treble"
 
-Because a node can hold multiple chords, we expand each chord
-with its own bass/treble, but they all share the node's bass
-and treble by default. If you want per-chord bass/treble,
-specify them per chord as an optional 4th element in the chord
-tuple.
+- Multiple chords per node: separate chords with ';'
+    "CFG|C4,E4,G4;F3,A3,C4|Am,Fmaj|C2|G5"
+- Bass or treble may be '-' for none.
+- Successors may be empty (nothing between the pipes).
+- Whitespace is trimmed; quotes are optional.
+
+Output: ChucK code you paste between the markers in munes_music.ck.
 """
 
 import re
@@ -21,74 +20,91 @@ import re
 # ============================================================
 # EDIT THIS BLOCK
 # ============================================================
-# Node format:
-#   ("name", [chord1, chord2, ...], ["succ1", "succ2", ...], bass, treble)
-#
-# chord1 is either:
-#   ["C4", "E4", "G4"]                    -- uses node bass/treble
-#   (["C4", "E4", "G4"], "C3", "G4")      -- overrides bass/treble
-#
-# bass / treble can also be None to leave them out of that node.
-
 NODES = [
-    # name       chords                            successors          bass   treble
-    ("CFG",   [["C4", "E4", "G4"],
-               ["F3", "A3", "C4"],
-               ["G3", "B3", "D4"]],              ["Am", "Fmaj", "CFG"], "C2", "G5"),
-    ("Am",    [["A3", "C4", "E4"],
-               ["F3", "A3", "C4"]],              ["CFG", "Em"],         "A1", "E5"),
-    ("Fmaj",  [["F3", "A3", "C4", "E4"]],        ["CFG", "G"],          "F1", "C5"),
-    ("G",     [["G3", "B3", "D4"],
-               ["C4", "E4", "G4"]],              ["C", "Am"],           "G1", "D5"),
-    ("Em",    [["E3", "G3", "B3"]],              ["Am", "CFG"],         "E2", "B4"),
-    ("C",     [["C4", "E4", "G4"]],              ["Fmaj", "G"],         "C2", "G5"),
+    "CFG|C4,E4,G4;F3,A3,C4;G3,B3,D4|Am,Fmaj,CFG|C2|G5",
+    "Am|A3,C4,E4;F3,A3,C4|CFG,Em|A1|E5",
+    "Fmaj|F3,A3,C4,E4|CFG,G|F1|C5",
+    "G|G3,B3,D4;C4,E4,G4|C,Am|G1|D5",
+    "Em|E3,G3,B3|Am,CFG|E2|B4",
+    "C|C4,E4,G4|Fmaj,G|C2|G5",
 ]
 # ============================================================
 
 
 def note_to_midi(note):
-    m = re.match(r'^([A-Ga-g])([#b]?)(-?\d+)$', note.strip())
+    note = note.strip()
+    if note in ("-", ""):
+        return -1
+    m = re.match(r'^([A-Ga-g])([#b]?)(-?\d+)$', note)
     if not m:
-        raise ValueError(f"Bad note name: {note}")
+        raise ValueError(f"Bad note name: {note!r}")
     letter, accidental, octave = m.group(1).upper(), m.group(2), int(m.group(3))
     semitone = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}[letter]
-    if accidental == '#': semitone += 1
-    elif accidental == 'b': semitone -= 1
+    if accidental == '#':
+        semitone += 1
+    elif accidental == 'b':
+        semitone -= 1
     return semitone + (octave + 1) * 12
 
 
+def parse_node(s):
+    # Strip optional surrounding quotes
+    s = s.strip()
+    if s.startswith('"') and s.endswith('"'):
+        s = s[1:-1]
+    parts = s.split('|')
+    if len(parts) != 5:
+        raise ValueError(f"Node must have 5 '|'-separated fields, got {len(parts)}: {s!r}")
+    name, chords_str, succ_str, bass_str, treble_str = [p.strip() for p in parts]
+
+    chords = []
+    if chords_str:
+        for chord_text in chords_str.split(';'):
+            chord_text = chord_text.strip()
+            if not chord_text:
+                continue
+            notes = [n.strip() for n in chord_text.split(',') if n.strip()]
+            chords.append(notes)
+
+    successors = [x.strip() for x in succ_str.split(',') if x.strip()] if succ_str else []
+
+    return name, chords, successors, bass_str, treble_str
+
+
 def main():
-    node_names = [n[0] for n in NODES]
-    node_to_idx = {n: i for i, n in enumerate(node_names)}
+    parsed = [parse_node(s) for s in NODES]
+    names = [p[0] for p in parsed]
+    name_to_idx = {n: i for i, n in enumerate(names)}
 
     # Validate successors
-    for name, _, succ, _, _ in NODES:
+    for name, _, succ, _, _ in parsed:
         for s in succ:
-            if s not in node_to_idx:
+            if s not in name_to_idx:
                 raise ValueError(f"Node '{name}' lists unknown successor '{s}'")
 
-    # Flatten chords into CHORDS + per-chord bass/treble
-    chord_list = []      # each entry: list of MIDI note numbers
-    chord_bass = []      # MIDI per chord
-    chord_treble = []    # MIDI per chord
-    node_chord_offsets = []  # start index into chord_list per node
-    node_chord_counts = []   # how many chords per node
+    # Flatten chords
+    chord_list = []           # list of [midi, midi, ...]
+    chord_bass = []
+    chord_treble = []
+    node_chord_offsets = []
+    node_chord_counts = []
 
-    for name, chords, _, node_bass, node_treble in NODES:
+    for name, chords, _, bass_str, treble_str in parsed:
+        bass_midi = note_to_midi(bass_str)
+        treble_midi = note_to_midi(treble_str)
         node_chord_offsets.append(len(chord_list))
         node_chord_counts.append(len(chords))
-        for c in chords:
-            # c may be a plain list or a tuple with per-chord overrides
-            if isinstance(c, tuple):
-                notes, cbass, ctreble = c
-            else:
-                notes, cbass, ctreble = c, node_bass, node_treble
-            chord_list.append([note_to_midi(n) for n in notes])
-            chord_bass.append(note_to_midi(cbass) if cbass else -1)
-            chord_treble.append(note_to_midi(ctreble) if ctreble else -1)
+        for notes in chords:
+            midis = [note_to_midi(n) for n in notes]
+            chord_list.append(midis)
+            chord_bass.append(bass_midi)
+            chord_treble.append(treble_midi)
+
+    if not chord_list:
+        raise ValueError("No chords defined")
 
     notes_per_chord = max(len(c) for c in chord_list)
-    n_nodes = len(NODES)
+    n_nodes = len(parsed)
     n_chords = len(chord_list)
 
     # Pad chords to notes_per_chord
@@ -97,17 +113,17 @@ def main():
         padded = c + [-1] * (notes_per_chord - len(c))
         chords_flat.extend(padded)
 
-    # Build successor arrays (per node)
+    # Successors
     succ_offsets, succ_counts, succ_targets = [], [], []
     offset = 0
-    for name, _, succ, _, _ in NODES:
+    for name, _, succ, _, _ in parsed:
         succ_offsets.append(offset)
         succ_counts.append(len(succ))
         for s in succ:
-            succ_targets.append(node_to_idx[s])
+            succ_targets.append(name_to_idx[s])
         offset += len(succ)
 
-    # ---- Emit ----
+    # Emit
     print("// ============================================================")
     print("// AUTO-GENERATED by generate_chuck_graph.py")
     print("// ============================================================")
@@ -117,10 +133,10 @@ def main():
     print(f"{n_chords} => int CHORD_COUNT;")
     print()
 
-    print("// Node index reference:")
-    for i, (name, chords, succ, _, _) in enumerate(NODES):
-        chain = " -> ".join(" ".join(c[0] if isinstance(c, tuple) else c) for c in chords)
-        print(f"//   {i:2d}  {name:8s}  [{chain}]  → {', '.join(succ)}")
+    print("// Node reference:")
+    for i, (name, chords, succ, _, _) in enumerate(parsed):
+        chain = " -> ".join("[" + ",".join(c) + "]" for c in chords)
+        print(f"//   {i:2d}  {name:10s} {chain}  → {', '.join(succ) if succ else '(none)'}")
     print()
 
     print("// Each chord = NOTES_PER_CHORD MIDI slots. -1 = silent.")
@@ -137,12 +153,10 @@ def main():
     print(f"[{', '.join(f'{m:3d}' for m in chord_treble)}] @=> int TREBLE_NOTES[];")
     print()
 
-    print("// Node → chord range mapping")
     print(f"[{', '.join(str(x) for x in node_chord_offsets)}] @=> int NODE_CHORD_OFFSETS[];")
     print(f"[{', '.join(str(x) for x in node_chord_counts)}] @=> int NODE_CHORD_COUNTS[];")
     print()
 
-    print("// Node graph")
     print(f"[{', '.join(str(x) for x in succ_offsets)}] @=> int SUCC_OFFSETS[];")
     print(f"[{', '.join(str(x) for x in succ_counts)}] @=> int SUCC_COUNTS[];")
     print(f"[{', '.join(str(x) for x in succ_targets)}] @=> int SUCC_TARGETS[];")
