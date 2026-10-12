@@ -39,8 +39,14 @@ public class ChunityMusicBridge : MonoBehaviour
         // Continuous inputs
         float speed = ball != null ? ball.GetComponent<Rigidbody>().linearVelocity.magnitude : 0f;
         float height = 0f;
-        if (gravity != null && gravity.sphereCenter != null)
-            height = Vector3.Distance(ball.transform.position, gravity.sphereCenter.position) - 400f;
+        if (gravity != null && gravity.sphereCenter != null && ball != null)
+        {
+            Vector3 gDir = (ball.transform.position - gravity.sphereCenter.position).normalized;
+            if (Physics.Raycast(ball.transform.position, gDir, out RaycastHit hit, 1000f))
+                height = Mathf.Max(0f, hit.distance - 1f); // minus ball radius
+            else
+                height = 0f;
+        }
 
         chuck.SetFloat(SPEED, speed);
         chuck.SetInt(GROUNDED, ball.IsGrounded ? 1 : 0);
@@ -52,7 +58,7 @@ public class ChunityMusicBridge : MonoBehaviour
         if (ball.JustTookOff)
         {
             chuck.SetInt(TAKEOFF, 1);
-            Invoke(nameof(ResetTakeoff), 0.1f);
+            Invoke(nameof(ResetTakeoff), 0.2f);
         }
         if (ball.JustLanded)
         {

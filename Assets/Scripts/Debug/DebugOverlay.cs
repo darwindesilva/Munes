@@ -35,8 +35,15 @@ public class DebugOverlay : MonoBehaviour
         float speed = ballRb != null ? ballRb.linearVelocity.magnitude : 0f;
         bool grounded = ball.IsGrounded;
         float height = 0f;
-        if (gravity != null && gravity.sphereCenter != null)
-            height = Vector3.Distance(ball.transform.position, gravity.sphereCenter.position) - 400f;
+        if (gravity != null && gravity.sphereCenter != null && ball != null)
+        {
+            Vector3 gDir = (ball.transform.position - gravity.sphereCenter.position).normalized;
+            if (Physics.Raycast(ball.transform.position, gDir, out RaycastHit hit, 1000f))
+                height = Mathf.Max(0f, hit.distance - 1f); // minus ball radius
+            else
+                height = 0f;
+        }
+
         float ttl = ball.PredictTimeToLand();
         int q = quadrant != null ? quadrant.CurrentQuadrant : -1;
 

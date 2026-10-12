@@ -99,7 +99,7 @@ MonoBehaviour:
     m_HSlider: 0
     m_VSlider: 0
     m_IgnoreScrollWheelUntilClicked: 0
-    m_EnableMouseInput: 0
+    m_EnableMouseInput: 1
     m_EnableSliderZoomHorizontal: 0
     m_EnableSliderZoomVertical: 0
     m_UniformScale: 1
@@ -251,7 +251,7 @@ MonoBehaviour:
     m_DynamicPanelBehaviorModified: 0
   m_ViewState:
     ValidContent: 10
-    ViewModelState: 7adaee72040000001c00000008020000020000000b000000ffffffff2212f54802000000180000000200000076fa4866010000002c00000009000000999c27a03b650a46a277b1ae3169a950a7050000000900000100000000000000000000000000000000000000000000000001000008000000020000007f6e7118000000000000000000000000999c27a03b650a46a277b1ae3169a950e56400000001000000000000020000001d18a031000000000000000000000000999c27a03b650a46a277b1ae3169a950ef640000000100000000000002000000943dfd43000000000000000000000000999c27a03b650a46a277b1ae3169a950f6640000000100000000000002000000d1aa3457000000000000000000000000999c27a03b650a46a277b1ae3169a950fc64000000010000000000000200000056f8ed12000000000000000000000000999c27a03b650a46a277b1ae3169a950296300000003000003000000020000005a160332000000000000000000000000999c27a03b650a46a277b1ae3169a950f2640000000100000000000002000000a96f5c2b000000000000000000000000999c27a03b650a46a277b1ae3169a950e96400000001000000000000020000002c48da16000000000000000000000000999c27a03b650a46a277b1ae3169a9500a67000000030000000000000200000004b42061000000000000000000000000999c27a03b650a46a277b1ae3169a950136700000005000000000000y
+    ViewModelState: 7adaee72040000001c000000ec010000020000000a000000ffffffff2212f54802000000180000000100000076fa4866010000002c00000009000000999c27a03b650a46a277b1ae3169a950a70500000009000001000000020000007f6e7118000000000000000000000000999c27a03b650a46a277b1ae3169a950f06400000001000000000000020000001d18a031000000000000000000000000999c27a03b650a46a277b1ae3169a950fa640000000100000000000002000000943dfd43000000000000000000000000999c27a03b650a46a277b1ae3169a95001650000000100000200000002000000d1aa3457000000000000000000000000999c27a03b650a46a277b1ae3169a9500765000000010000000000000200000056f8ed12000000000000000000000000999c27a03b650a46a277b1ae3169a9502d6300000003000000000000020000005a160332000000000000000000000000999c27a03b650a46a277b1ae3169a950fd640000000100000000000002000000a96f5c2b000000000000000000000000999c27a03b650a46a277b1ae3169a950f46400000001000000000000020000002c48da16000000000000000000000000999c27a03b650a46a277b1ae3169a950ec64000000010000000000000200000004b42061000000000000000000000000999c27a03b650a46a277b1ae3169a9500a6500000001000000000000y
     SearchText: 
     Columns:
     - ColumnId: Visibility
@@ -288,8 +288,8 @@ MonoBehaviour:
       Index: 7
     ScrollPositionX: -1
     ScrollPositionY: -1
-  m_WindowGUID: c770c5ac01fa83043bc3ac310e730d1d
-  m_UndoId: -927523913
+  m_WindowGUID: e9486a4c8d56742418c15f81cf156122
+  m_UndoId: 1633745561
 --- !u!114 &7
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -852,7 +852,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: ProjectBrowser
+  m_Name: ConsoleWindow
   m_EditorClassIdentifier: 
   m_Children: []
   m_Position:
@@ -861,14 +861,14 @@ MonoBehaviour:
     y: 553
     width: 1466
     height: 380
-  m_MinSize: {x: 231, y: 276}
-  m_MaxSize: {x: 10001, y: 10026}
-  m_ActualView: {fileID: 10}
+  m_MinSize: {x: 101, y: 126}
+  m_MaxSize: {x: 4001, y: 4026}
+  m_ActualView: {fileID: 11}
   m_Panes:
   - {fileID: 10}
   - {fileID: 11}
-  m_Selected: 0
-  m_LastSelected: 1
+  m_Selected: 1
+  m_LastSelected: 0
 --- !u!114 &10
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -920,7 +920,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Scripts/Debug
+    - Assets
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -931,24 +931,23 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/Scripts/Debug
+  - Assets
   m_LastFoldersGridSize: -1
   m_LastProjectPath: C:\Users\darwi\OneDrive\Documents\GitHub\Munes
   m_LockTracker:
     m_IsLocked: 0
   m_LastLocalAssetsSearchArea: 1
   m_FolderTreeState:
-    scrollPos: {x: 0, y: 34}
+    scrollPos: {x: 0, y: 2}
     m_SelectedIDs:
-    - m_rawData: 5497558165512
+    - m_rawData: 1099511653716
     m_LastClickedID:
-      m_rawData: 5497558165512
+      m_rawData: 1099511653716
     m_ExpandedIDs:
     - m_rawData: 0
     - m_rawData: 6442450943
-    - m_rawData: 1099511653704
-    - m_rawData: 1099511654022
-    - m_rawData: 1099511654032
+    - m_rawData: 1099511653716
+    - m_rawData: 1099511653996
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -983,8 +982,8 @@ MonoBehaviour:
     m_ExpandedIDs:
     - m_rawData: 0
     - m_rawData: 6442450943
-    - m_rawData: 1099511653704
-    - m_rawData: 1099511654022
+    - m_rawData: 1099511653716
+    - m_rawData: 1099511653996
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1012,10 +1011,9 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs:
-    - m_rawData: 3298534908713
+    m_SelectedInstanceIDs: []
     m_LastClickedEntityId:
-      m_rawData: 3298534908713
+      m_rawData: 0
     m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs: []
     m_RenameOverlay:
@@ -1035,7 +1033,7 @@ MonoBehaviour:
       m_OriginalEventType: 11
       m_IsRenamingFilename: 1
       m_TrimLeadingAndTrailingWhitespace: 0
-      m_ClientGUIView: {fileID: 9}
+      m_ClientGUIView: {fileID: 0}
     m_CreateAssetUtility:
       m_EndAction: {fileID: 0}
       m_EntityId:
@@ -1069,10 +1067,10 @@ MonoBehaviour:
     m_TextWithWhitespace: "Console\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 2249
-    y: 726.5
-    width: 920
-    height: 250
+    x: 0
+    y: 632
+    width: 1465
+    height: 354
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -1160,7 +1158,7 @@ MonoBehaviour:
     m_CachedPref: 160
     m_ControlHash: -371814159
     m_PrefName: Preview_InspectorPreview
-  m_LastVerticalScrollValue: 154
+  m_LastVerticalScrollValue: 544
   m_GlobalObjectId: 
   m_InspectorMode: 0
   m_LockTracker:
