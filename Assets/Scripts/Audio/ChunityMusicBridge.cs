@@ -63,7 +63,7 @@ public class ChunityMusicBridge : MonoBehaviour
         if (ball.JustLanded)
         {
             chuck.SetInt(LANDED, 1);
-            Invoke(nameof(ResetLanded), 0.1f);
+            Invoke(nameof(ResetLanded), 0.2f);
         }
     }
 

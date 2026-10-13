@@ -217,7 +217,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BallController
   moveForce: 25
   maxGroundSpeed: 35
-  groundFriction: 2
+  groundFriction: 1
   airStrafeAcceleration: 8
   airStrafeMaxSpeed: 25
   slamForce: 45
@@ -227,6 +227,8 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  landingMomentumPreserve: 0.5
+  drawGizmos: 1
 --- !u!114 &317585501
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -852,19 +854,19 @@ MonoBehaviour:
   radius: 500
   resolution: 129
   duneHeight: 40
-  duneScale: 30
+  duneScale: 25
   duneSharpness: 2.25
-  noiseOctaves: 2
+  noiseOctaves: 3
   noiseLacunarity: 2
   noisePersistence: 0.3
   biomeColors:
-  - {r: 0.6980392, g: 0.1333333, b: 0.1333333, a: 1}
-  - {r: 1, g: 0.5490196, b: 0, a: 1}
-  - {r: 0.854902, g: 0.6470588, b: 0.1254902, a: 1}
-  - {r: 0.8156863, g: 0.1254902, b: 0.5647059, a: 1}
-  - {r: 0.5411765, g: 0.1686275, b: 0.8862746, a: 1}
-  - {r: 0.1803922, g: 0.5450981, b: 0.3411765, a: 1}
-  - {r: 0.5019608, g: 0.5019608, b: 0, a: 1}
+  - {r: 0, g: 0, b: 0.8039216, a: 1}
+  - {r: 0.1176471, g: 0.5647059, b: 1, a: 1}
+  - {r: 0.1882353, g: 0.682353, b: 0.7490196, a: 1}
+  - {r: 0.2509804, g: 0.8784314, b: 0.8156863, a: 1}
+  - {r: 0.8784314, g: 1, b: 1, a: 1}
+  - {r: 0.9411765, g: 0.9725491, b: 1, a: 1}
+  - {r: 0.4392157, g: 0.5019608, b: 0.5647059, a: 1}
   - {r: 0, g: 0, b: 0.5450981, a: 1}
   biomeBlendSharpness: 2.5
   ambientLevel: 0.55
