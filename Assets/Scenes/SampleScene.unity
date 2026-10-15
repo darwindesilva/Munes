@@ -863,11 +863,11 @@ MonoBehaviour:
   - {r: 0, g: 0, b: 0.8039216, a: 1}
   - {r: 0.1176471, g: 0.5647059, b: 1, a: 1}
   - {r: 0.1882353, g: 0.682353, b: 0.7490196, a: 1}
-  - {r: 0.2509804, g: 0.8784314, b: 0.8156863, a: 1}
-  - {r: 0.8784314, g: 1, b: 1, a: 1}
-  - {r: 0.9411765, g: 0.9725491, b: 1, a: 1}
+  - {r: 0.5764706, g: 0.4392157, b: 0.8588236, a: 1}
+  - {r: 0.49411765, g: 0.9803922, b: 0.7490196, a: 1}
+  - {r: 1, g: 0.9215687, b: 0.8039216, a: 1}
   - {r: 0.4392157, g: 0.5019608, b: 0.5647059, a: 1}
-  - {r: 0, g: 0, b: 0.5450981, a: 1}
+  - {r: 0.3921569, g: 0.5843138, b: 0.9294118, a: 1}
   biomeBlendSharpness: 2.5
   ambientLevel: 0.55
   lightContribution: 0.45
@@ -1186,9 +1186,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61e53d0fca5423740b35d64911532b60, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DebugOverlay
-  ball: {fileID: 317585500}
-  quadrant: {fileID: 317585501}
-  gravity: {fileID: 1463069394}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

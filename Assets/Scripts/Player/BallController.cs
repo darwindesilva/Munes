@@ -111,7 +111,7 @@ public class BallController : MonoBehaviour
         jumpLatched = false;
         slamLatched = false;
 
-        // Store velocity BEFORE the collision for landing preservation
+        //store velocity before ground collision for landing preservation
         preLandingVelocity = rb.linearVelocity;
 
         rb.AddForce(gravityDir * gravity.gravityStrength, ForceMode.Acceleration);
@@ -136,8 +136,7 @@ public class BallController : MonoBehaviour
         {
             justLandedTimer = 0.15f;
 
-            // Momentum preservation: restore a fraction of the tangential
-            // velocity that was lost during the collision response.
+            //momentum preservation: restore a fraction of the tangential velocity that was lost during the collision response.
             Vector3 preTangential = Vector3.ProjectOnPlane(preLandingVelocity, gravityDir);
             Vector3 postTangential = Vector3.ProjectOnPlane(rb.linearVelocity, gravityDir);
             float lostSpeed = preTangential.magnitude - postTangential.magnitude;
@@ -167,7 +166,7 @@ public class BallController : MonoBehaviour
             lastJumpTime = Time.time;
         }
 
-        // Slam — now nearly vertical
+        //90% vertical slam
         if (slamNow && !isGrounded)
         {
             Vector3 camFwd = cam.transform.forward;

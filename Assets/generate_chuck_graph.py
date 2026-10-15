@@ -20,9 +20,6 @@ Example (2 chords, 4 channels, x is a silent 4th voice):
 import re
 
 GRAPHS = {
-    # ============================================================
-    # JAZZ — ii-V-I, secondary dominants, modal interchange
-    # ============================================================
     "jazz": [
         "Dm7|D3,F3,A3,C4|G7,Cmaj7|D2",
         "G7|G3,B3,D4,F4|Cmaj7,Dm7|G1",
@@ -34,48 +31,19 @@ GRAPHS = {
         "Em7|E3,G3,B3,D4|Am7,Dm7|E2",
     ],
 
-    # ============================================================
-    # HINGE TO G — C major ⇄ G major via Am7 pivot
-    # ============================================================
-    "hinge_to_G": [
-        "C|C3,E3,G3,B3|Am7|C2",
-        "Am7|A2,C3,E3,G3|D7|A1",
-        "D7|D3,F#3,A3,C4|Gmaj7|D2",
-        "Gmaj7|G2,B2,D3,F#3;E3,G3,B3,D4|Em7|G1;E2",
-        "Em7|E3,G3,B3,D4|Am7,D7|E2",
-    ],
-
-    # ============================================================
-    # HINGE TO F — C major ⇄ F major via Dm7 pivot
-    # ============================================================
-    "hinge_to_F": [
-        "C|C3,E3,G3,B3|Dm7|C2",
-        "Dm7|D3,F3,A3,C4|C7|D2",
-        "C7|C3,E3,G3,Bb3|Fmaj7|C2",
-        "Fmaj7|F3,A3,C4,E4;G2,Bb2,D3,F3|Gm7|F1;G1",
-        "Gm7|G2,Bb2,D3,F3|C7|G1",
-    ],
-
-    # ============================================================
-    # HINGE TO Am — C major ⇄ A minor via Em7 pivot
-    # ============================================================
-    "hinge_to_Am": [
-        "C|C3,E3,G3,B3|Em7|C2",
-        "Em7|E3,G3,B3,D4|Am7|E2",
-        "Am7|A2,C3,E3,G3|E7|A1",
-        "E7|E2,G#2,B2,D3|Am|E2",
-        "Am|A2,C3,E3|Em7,C|A1",
-    ],
-
-    "darwin1": [
+    "dar": [
         "A1|C3,E3,G3,B3,x;C3,E3,G3,B3,D3|A2|C2",
         "A2|D3,F3,A3,C3,x;D3,F3,A3,C3,E4;|A3|D2;D2",
-        "A3|C3,G3,E4,x,x|A1|C2",
+        "A3|C3,G3,E4,x,x;C3,G3,B3,x,x|A4|G2",
+        "A4|C3,E3,G3,A3,x|A5|C2",
+        "A5|D3,F3,A3,C4,x|A1,B1,C1|D2",
+        "B1|A3,C4,E4,x,x;A3,C4,E4,G4,B4|A2|A2",
+        "C1|F3,A3,x,A4,x;D3,F3,x,C5,x|A1,B1|D2"
+
 
     ],
 }
-
-ACTIVE_GRAPH = "darwin1"   # switch to "hinge_to_G", "hinge_to_F", "hinge_to_Am"
+ACTIVE_GRAPH = "dar"  
 
 
 def note_to_midi(note):
