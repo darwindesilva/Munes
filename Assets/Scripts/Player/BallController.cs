@@ -54,6 +54,9 @@ public class BallController : MonoBehaviour
     public bool JustLanded => justLandedTimer > 0f;
     public bool LastGroundHitIsValid => lastGroundedResult;
 
+    public event System.Action TookOff;
+    public event System.Action Slammed;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -62,9 +65,7 @@ public class BallController : MonoBehaviour
         rb.useGravity = false;
         rb.constraints = RigidbodyConstraints.None;
 
-        // Assign a low-friction Physic Material so Unity doesn't kill
-        // tangential momentum on collision. Rolling is still visually
-        // correct because the code applies forces along the surface.
+        // low friction so the ball keeps its sideways speed when it hits stuff
         var col = GetComponent<Collider>();
         if (col != null)
         {
@@ -111,7 +112,7 @@ public class BallController : MonoBehaviour
         jumpLatched = false;
         slamLatched = false;
 
-        //store velocity before ground collision for landing preservation
+        // remember the velocity from before the landing
         preLandingVelocity = rb.linearVelocity;
 
         rb.AddForce(gravityDir * gravity.gravityStrength, ForceMode.Acceleration);
@@ -136,7 +137,7 @@ public class BallController : MonoBehaviour
         {
             justLandedTimer = 0.15f;
 
-            //momentum preservation: restore a fraction of the tangential velocity that was lost during the collision response.
+            // give back some of the sideways speed lost in the landing
             Vector3 preTangential = Vector3.ProjectOnPlane(preLandingVelocity, gravityDir);
             Vector3 postTangential = Vector3.ProjectOnPlane(rb.linearVelocity, gravityDir);
             float lostSpeed = preTangential.magnitude - postTangential.magnitude;
@@ -152,6 +153,7 @@ public class BallController : MonoBehaviour
         {
             justTookOffTimer = 0.15f;
             OnTakeoff();
+            TookOff?.Invoke();
         }
 
         if (justTookOffTimer > 0f) justTookOffTimer -= Time.fixedDeltaTime;
@@ -166,7 +168,7 @@ public class BallController : MonoBehaviour
             lastJumpTime = Time.time;
         }
 
-        //90% vertical slam
+        // slam goes mostly straight down
         if (slamNow && !isGrounded)
         {
             Vector3 camFwd = cam.transform.forward;
@@ -174,6 +176,7 @@ public class BallController : MonoBehaviour
             Vector3 slamDir = (tangent * 0.1f + gravityDir * 0.9f).normalized;
 
             rb.AddForce(slamDir * slamForce, ForceMode.Impulse);
+            Slammed?.Invoke();
 
             float alignedSpeed = Vector3.Dot(rb.linearVelocity, slamDir);
             if (alignedSpeed > 0f)

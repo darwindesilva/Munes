@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
-"""
-ChucK chord graph generator for Munes — multi-graph version.
+# makes the chord graph block for munes_music.ck
+#
+# python generate_chuck_graph.py
+#     prints the block so you can paste it into the ck file
+#
+# python generate_chuck_graph.py --ck munes_music.ck --info Assets/Resources/chord_info.txt
+#     patches the block inside the ck file and writes the chord table unity reads
+#
+# node format: "name|chord;chord|next,next|bass;bass"
+#   ';' splits chords inside one node (the music steps through them on each jump)
+#   ',' splits the notes in a chord, keep them low to high so the slides stay short
+#   'x' is a silent slot
+#   one bass value is used for every chord in the node
+#
+# every node has to sit on its own line, the line number shows up in the unity overlay
 
-All graphs are concatenated into one block. ChucK switches between
-graphs based on in_zone (mapped via in_zone % NUM_GRAPHS).
-
-Node format:
-    "name|chord1;chord2;...|succ1,succ2|bass1;bass2;..."
-
-- ';' inside the chord field separates chords within the node.
-- ',' inside a chord separates note channels.
-- 'x' / '-' / empty = silent channel (snaps+fades when populated).
-- bass uses ';' per-chord; single value applies to all chords.
-
-The "dar" graph from earlier is preserved as graph 0.
-"""
-
+import argparse
+import os
 import re
+import sys
 
 GRAPHS = {
-    # ============================================================
-    # dar — user's preserved custom progression
-    # ============================================================
+    # my own progression
     "dar": [
         "A1|C3,E3,G3,B3,x;C3,E3,G3,B3,D3|A2|C2;C2",
         "A2|D3,F3,A3,C3,x;D3,F3,A3,C3,E4|A3|D2;D2",
@@ -29,7 +29,6 @@ GRAPHS = {
         "A4|C3,E3,G3,A3,x|A5|C2",
         "A5|D3,F3,A3,C4,x|A1|D2",
     ],
-
 
     "jazz": [
         "Dm7|D3,F3,A3,C4|G7,Cmaj7|D2",
@@ -41,12 +40,71 @@ GRAPHS = {
         "Fmaj7|F3,A3,C4,E4|G7,Em7|F1",
         "Em7|E3,G3,B3,D4|Am7,Dm7|E2",
     ],
+
+    "hinge_to_Am": [
+        "Cmaj7|C3,E3,G3,B3|Em7|C2",
+        "Em7|E3,G3,B3,D4|Am7|E2",
+        "Am7|A2,C3,E3,G3|E7|A1",
+        "E7|E2,G#2,B2,D3|Am|E2",
+        "Am|A2,C3,E3|Em7,Cmaj7|A1",
+    ],
+
+    # dark cinematic c minor, the bVI and bVII moves and a few chromatic mediants
+    "dean_minor": [
+        "Cm9|C3,Eb3,G3,Bb3,D4,G4|Cm11,CmMaj9,Abmaj9,Bbadd9,Fm9|C2",
+        "Cm11|C3,Eb3,G3,Bb3,D4,F4|Cm9,Fm9,Ebmaj9,G7sus,Aeolian_walk|C2",
+        "CmMaj9|C3,Eb3,G3,B3,D4,G4|Cm9,Abmaj9,Fm9,Bdim7|C2",
+        "Abmaj9|C3,Eb3,G3,Bb3,C4,Eb4|Fm9,Ebmaj9,Dbmaj9,Emaj9,Bbadd9|Ab1",
+        "Fm9|C3,Eb3,Ab3,C4,Eb4,G4|Cm11,G7sus,Dbmaj9,Bbadd9,Aeolian_walk|F1",
+        "Bbadd9|D3,F3,Bb3,C4,D4,F4|G7sus,Cm9,Abmaj9,Gm9|Bb1",
+        "Ebmaj9|Eb3,G3,Bb3,D4,F4,Bb4|Abmaj9,Cm9,Bbadd9,Gm9|Eb2",
+        "G7sus|D3,G3,C4,D4,F4,Ab4|Cm9,Abmaj9,Ebmaj9,Bdim7|G1",
+        "Gm9|D3,F3,Bb3,D4,F4,A4|Cm9,Ebmaj9,Fm9|G1",
+        "Dbmaj9|Db3,F3,Ab3,C4,Eb4,G4|Cm9,Fm9,Abmaj9|Db2",
+        "Emaj9|E3,G#3,B3,D#4,F#4,B4|Abmaj9,Cm11,Ebmaj9|E2",
+        "Bdim7|D3,F3,Ab3,B3,D4,F4|Cm9,Cm11,Abmaj9|B1",
+        "Aeolian_walk|Eb3,G3,Bb3,D4,F4,Bb4;D3,F3,Bb3,C4,D4,F4;C3,Eb3,G3,Bb3,D4,G4|Fm9,Abmaj9,G7sus|Eb2;Bb1;C2",
+    ],
+
+    # floaty f lydian, major chords with the #11 and big third jumps
+    "lydian_haze": [
+        "Fmaj9#11|F3,A3,C4,E4,G4,B4|Gadd9,Cmaj9,Bbmaj9#11,Abmaj9,Am9|F2",
+        "Gadd9|D3,G3,A3,B3,D4,G4|Fmaj9#11,Cmaj9,Am9,Csus2|G1",
+        "Cmaj9|C3,E3,G3,B3,D4,G4|Am9,Dm9,Fmaj9#11,Abmaj9,Emaj9,Chromatic_mediants|C2",
+        "Am9|C3,E3,G3,B3,E4,A4|Dm9,Fmaj9#11,Gadd9,Bbmaj9#11|A1",
+        "Dm9|C3,E3,A3,C4,F4,A4|Gadd9,Cmaj9,Bbmaj9#11,Fadd9|D2",
+        "Bbmaj9#11|D3,F3,A3,C4,E4,A4|Fmaj9#11,Cmaj9,Abmaj9,Gadd9|Bb1",
+        "Abmaj9|C3,Eb3,G3,Bb3,C4,Eb4|Cmaj9,Emaj9,Fmaj9#11,Bbmaj9#11|Ab1",
+        "Emaj9|E3,G#3,B3,D#4,F#4,B4|Abmaj9,Cmaj9,Am9,Fmaj9#11,Chromatic_mediants|E2",
+        "Fadd9|C3,F3,G3,A3,C4,F4|Fmaj9#11,Dm9,Csus2,Lydian_rise|F1",
+        "Csus2|C3,D3,G3,C4,D4,G4|Cmaj9,Fmaj9#11,Am9,Gadd9,Lydian_rise|C2",
+        "Lydian_rise|C3,F3,G3,A3,C4,F4;D3,G3,A3,B3,D4,G4;C3,E3,G3,B3,E4,A4|Cmaj9,Bbmaj9#11|F1;G1;A1",
+        "Chromatic_mediants|C3,E3,G3,B3,D4,G4;C3,Eb3,G3,Bb3,C4,Eb4;E3,G#3,B3,D#4,F#4,B4|Fmaj9#11,Am9|C2;Ab1;E2",
+    ],
+
+    # d dorian, sus chords and a lot of d in the bass
+    "dorian_haze": [
+        "Dm11|D3,F3,A3,C4,E4,G4|Dm9,G13,Em7b9,Bbmaj9#11,Dorian_float|D2",
+        "Dm9|D3,F3,A3,C4,E4,A4|Dm11,Fmaj9#11,Gsus9,Am11,Dsus2|D2",
+        "Bbmaj9#11|D3,F3,A3,C4,E4,A4|Dm9,Fmaj9#11,Cmaj9#5,Gsus9|Bb1",
+        "Em7b9|E3,G3,B3,D4,F4,A4|Dm11,Fmaj9#11,Bm7b5,Am11,Cadence_tilt|E2",
+        "Fmaj9#11|F3,A3,C4,E4,G4,B4|G13,Em7b9,Dm9,Cmaj9#5|F2",
+        "G13|F3,B3,D4,E4,G4,A4|Dm11,Am11,Fmaj9#11,Gsus9|G1",
+        "Gsus9|D3,G3,C4,D4,F4,A4|G13,Dm11,Am11,Bbmaj9#11|G1",
+        "Am11|C3,E3,G3,B3,D4,G4|Dm9,Fmaj9#11,Em7b9,Bm7b5|A1",
+        "Bm7b5|D3,F3,A3,B3,D4,F4|Em7b9,Dm11,Am11,Cadence_tilt|B1",
+        "Cmaj9#5|C3,E3,G#3,B3,D4,F#4|Dm9,Fmaj9#11,Bbmaj9#11|C2",
+        "Dsus2|D3,A3,D4,E4,G4,A4|Dm11,Dm9,Dorian_float|D2",
+        "Dorian_float|D3,F3,A3,C4,E4,A4;E3,G3,B3,D4,F4,A4;F3,A3,C4,E4,G4,B4;D3,G3,C4,D4,F4,A4|Dm11,Gsus9,Am11|D2",
+        "Cadence_tilt|D3,F3,A3,B3,D4,F4;E3,G3,B3,D4,F4,A4;C3,E3,G3,B3,D4,G4|Dm11,Dm9,Fmaj9#11|B1;E2;A1",
+    ],
 }
 
-ACTIVE_GRAPHS_ORDER = ["dar", "jazz", "hinge_to_Am"]
-# ^ The order in which graphs are emitted. ChucK maps in_zone to a graph
-#   via in_zone % NUM_GRAPHS. If zoneCount in Unity matches this list
-#   length, zones are 1:1 with graphs.
+# unity zone number % number of graphs picks the graph, so keep this the same length as zoneCount
+ORDER = ["dar", "jazz", "hinge_to_Am", "dean_minor", "lydian_haze", "dorian_haze"]
+
+START_MARK = "// generated block start"
+END_MARK = "// generated block end"
 
 
 def note_to_midi(note):
@@ -55,144 +113,177 @@ def note_to_midi(note):
         return -1
     m = re.match(r'^([A-Ga-g])([#b]?)(-?\d+)$', note)
     if not m:
-        raise ValueError(f"Bad note name: {note!r}")
+        raise ValueError("bad note name: " + repr(note))
     letter, accidental, octave = m.group(1).upper(), m.group(2), int(m.group(3))
     semitone = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}[letter]
-    if accidental == '#': semitone += 1
-    elif accidental == 'b': semitone -= 1
+    if accidental == '#':
+        semitone += 1
+    elif accidental == 'b':
+        semitone -= 1
     return semitone + (octave + 1) * 12
 
 
-def parse_node(s):
-    s = s.strip()
-    if s.startswith('"') and s.endswith('"'):
-        s = s[1:-1]
-    parts = s.split('|')
+def parse_node(text):
+    parts = text.strip().split('|')
     if len(parts) != 4:
-        raise ValueError(f"Node must have 4 '|' fields, got {len(parts)}: {s!r}")
+        raise ValueError("node needs 4 fields: " + repr(text))
     name, chords_str, succ_str, bass_str = [p.strip() for p in parts]
 
     chords = []
-    if chords_str:
-        for chord_text in chords_str.split(';'):
-            chord_text = chord_text.strip()
-            if chord_text:
-                chords.append([n.strip() for n in chord_text.split(',')])
-
+    for chunk in chords_str.split(';'):
+        if chunk.strip():
+            chords.append([n.strip() for n in chunk.split(',')])
     if not chords:
-        raise ValueError(f"Node {name!r} has no chords")
-    n_chords = len(chords)
+        raise ValueError("node " + name + " has no chords")
 
     if not bass_str:
-        bass_vals = ["-"] * n_chords
+        bass = ["-"] * len(chords)
     else:
-        vals = [v.strip() for v in bass_str.split(';')]
-        if len(vals) == 1:
-            bass_vals = vals * n_chords
-        elif len(vals) == n_chords:
-            bass_vals = vals
-        else:
-            raise ValueError(f"Node {name!r}: bass has {len(vals)} values but {n_chords} chords")
+        bass = [b.strip() for b in bass_str.split(';')]
+        if len(bass) == 1:
+            bass = bass * len(chords)
+        elif len(bass) != len(chords):
+            raise ValueError("node " + name + ": bass count doesn't match chord count")
 
-    successors = [x.strip() for x in succ_str.split(',') if x.strip()] if succ_str else []
-    return name, chords, successors, bass_vals
+    succ = [s.strip() for s in succ_str.split(',') if s.strip()]
+    return name, chords, succ, bass
 
 
-def emit_all(graphs, order):
-    # Global counters
-    global_chords = []          # list of [midi...]
-    global_bass = []            # midi per chord
-    global_node_chord_off = []  # GLOBAL start chord index per GLOBAL node
-    global_node_chord_cnt = []  # chord count per node
-    global_succ_off = []
-    global_succ_cnt = []
-    global_succ_tgt = []        # GLOBAL node indices
+def find_line(lines, graph_name, node_text):
+    start = 0
+    for i, line in enumerate(lines):
+        if re.match(r'\s*"' + re.escape(graph_name) + r'"\s*:\s*\[', line):
+            start = i
+            break
+    for i in range(start, len(lines)):
+        if '"' + node_text + '"' in lines[i]:
+            return i + 1
+    return 0
 
-    graph_node_offsets = []     # start global-node-index per graph
-    graph_node_counts = []      # node count per graph
+
+def build(graphs, order):
+    with open(os.path.abspath(__file__), encoding="utf-8") as f:
+        src_lines = f.read().split("\n")
+
+    chords_out = []        # midi notes per chord
+    bass_out = []
+    chord_names = []       # node name per chord, for the comments
+    node_chord_off = []
+    node_chord_cnt = []
+    succ_off = []
+    succ_cnt = []
+    succ_tgt = []
+    graph_off = []
+    graph_cnt = []
+    info = []
 
     for gname in order:
-        nodes = graphs[gname]
-        parsed = [parse_node(s) for s in nodes]
-        names_local = [p[0] for p in parsed]
-        name_to_local = {n: i for i, n in enumerate(names_local)}
+        raw_nodes = graphs[gname]
+        parsed = [parse_node(s) for s in raw_nodes]
+        name_to_local = {}
+        for i, p in enumerate(parsed):
+            if p[0] in name_to_local:
+                raise ValueError("graph " + gname + " has two nodes called " + p[0])
+            name_to_local[p[0]] = i
 
         for name, _, succ, _ in parsed:
             for s in succ:
                 if s not in name_to_local:
-                    raise ValueError(f"Graph '{gname}' node '{name}' has unknown successor '{s}'")
+                    raise ValueError("graph " + gname + ", node " + name + ": no node called " + s)
 
-        graph_node_offsets.append(len(global_node_chord_off))
-        graph_node_counts.append(len(parsed))
+        base = len(node_chord_off)
+        graph_off.append(base)
+        graph_cnt.append(len(parsed))
 
-        # Compute the graph's global node base
-        node_base = len(global_node_chord_off)
+        for raw, (name, chords, succ, bass) in zip(raw_nodes, parsed):
+            line_no = find_line(src_lines, gname, raw)
+            node_chord_off.append(len(chords_out))
+            node_chord_cnt.append(len(chords))
 
-        for name, chords, succ, bass_vals in parsed:
-            global_node_chord_off.append(len(global_chords))
-            global_node_chord_cnt.append(len(chords))
-            for i, notes in enumerate(chords):
-                global_chords.append([note_to_midi(n) for n in notes])
-                global_bass.append(note_to_midi(bass_vals[i]))
+            for pos, notes in enumerate(chords):
+                midi = [note_to_midi(n) for n in notes]
+                chords_out.append(midi)
+                bass_out.append(note_to_midi(bass[pos]))
+                chord_names.append(name)
+                shown = " ".join(n for n in notes if note_to_midi(n) >= 0)
+                midi_txt = " ".join(str(m) for m in midi if m >= 0)
+                info.append("|".join([
+                    str(len(chords_out) - 1), gname, name, str(pos + 1),
+                    str(len(chords)), str(line_no), shown, midi_txt, bass[pos],
+                ]))
 
-            global_succ_off.append(len(global_succ_tgt))
-            global_succ_cnt.append(len(succ))
+            succ_off.append(len(succ_tgt))
+            succ_cnt.append(len(succ))
             for s in succ:
-                global_succ_tgt.append(node_base + name_to_local[s])
+                succ_tgt.append(base + name_to_local[s])
 
-    notes_per_chord = max(len(c) for c in global_chords)
-    n_nodes = len(global_node_chord_off)
-    n_chords = len(global_chords)
-    n_graphs = len(order)
+    per_chord = max(len(c) for c in chords_out)
 
-    # ---- Emit ----
-    print("// ============================================================")
-    print(f"// AUTO-GENERATED by generate_chuck_graph.py — multi-graph")
-    print(f"// Graph order: {', '.join(order)}")
-    print(f"// NUM_GRAPHS = {n_graphs}")
-    print("// ============================================================")
-    print()
-    print(f"{notes_per_chord} => int NOTES_PER_CHORD;")
-    print(f"{n_nodes} => int NODE_COUNT;")
-    print(f"{n_chords} => int CHORD_COUNT;")
-    print(f"{n_graphs} => int NUM_GRAPHS;")
-    print()
+    def nums(values):
+        return ", ".join(str(v) for v in values)
 
-    # Graph node ranges
-    print("// Graph → [start global node, count]")
-    print(f"[{', '.join(str(x) for x in graph_node_offsets)}] @=> int GRAPH_NODE_OFFSETS[];")
-    print(f"[{', '.join(str(x) for x in graph_node_counts)}]  @=> int GRAPH_NODE_COUNTS[];")
-    print()
+    out = []
+    out.append("// made by generate_chuck_graph.py, change the python file instead of this block")
+    out.append("// graph order: " + ", ".join(order))
+    out.append("")
+    out.append(str(per_chord) + " => int NOTES_PER_CHORD;")
+    out.append(str(len(node_chord_off)) + " => int NODE_COUNT;")
+    out.append(str(len(chords_out)) + " => int CHORD_COUNT;")
+    out.append(str(len(order)) + " => int NUM_GRAPHS;")
+    out.append("")
+    out.append("[" + nums(graph_off) + "] @=> int GRAPH_NODE_OFFSETS[];")
+    out.append("[" + nums(graph_cnt) + "] @=> int GRAPH_NODE_COUNTS[];")
+    out.append("")
+    out.append("[")
+    for i, c in enumerate(chords_out):
+        padded = c + [-1] * (per_chord - len(c))
+        row = ", ".join("%3d" % m for m in padded)
+        out.append("  %s,  // %d %s" % (row, i, chord_names[i]))
+    out.append("] @=> int CHORDS[];")
+    out.append("")
+    out.append("[" + nums(bass_out) + "] @=> int BASS_NOTES[];")
+    out.append("")
+    out.append("[" + nums(node_chord_off) + "] @=> int NODE_CHORD_OFFSETS[];")
+    out.append("[" + nums(node_chord_cnt) + "] @=> int NODE_CHORD_COUNTS[];")
+    out.append("")
+    out.append("[" + nums(succ_off) + "] @=> int SUCC_OFFSETS[];")
+    out.append("[" + nums(succ_cnt) + "] @=> int SUCC_COUNTS[];")
+    out.append("[" + nums(succ_tgt) + "] @=> int SUCC_TARGETS[];")
+    return "\n".join(out), "\n".join(info) + "\n"
 
-    # Chords
-    print("// All chords (global indices)")
-    print("[")
-    for i, c in enumerate(global_chords):
-        padded = c + [-1] * (notes_per_chord - len(c))
-        line = ", ".join(f"{m:3d}" for m in padded)
-        print(f"  {line},  // {i:2d}")
-    print("] @=> int CHORDS[];")
-    print()
 
-    # Bass
-    print(f"[{', '.join(f'{m:3d}' for m in global_bass)}] @=> int BASS_NOTES[];")
-    print()
+def patch_ck(path, block):
+    with open(path, newline="") as f:
+        text = f.read()
+    newline = "\r\n" if "\r\n" in text else "\n"
+    text = text.replace("\r\n", "\n")
 
-    # Per-node chord offsets/counts
-    print(f"[{', '.join(str(x) for x in global_node_chord_off)}] @=> int NODE_CHORD_OFFSETS[];")
-    print(f"[{', '.join(str(x) for x in global_node_chord_cnt)}] @=> int NODE_CHORD_COUNTS[];")
-    print()
+    a = text.find(START_MARK)
+    b = text.find(END_MARK)
+    if a < 0 or b < 0:
+        sys.exit("couldn't find the start and end markers in " + path)
+    a_end = text.index("\n", a) + 1
 
-    # Successors
-    print(f"[{', '.join(str(x) for x in global_succ_off)}] @=> int SUCC_OFFSETS[];")
-    print(f"[{', '.join(str(x) for x in global_succ_cnt)}] @=> int SUCC_COUNTS[];")
-    print(f"[{', '.join(str(x) for x in global_succ_tgt)}] @=> int SUCC_TARGETS[];")
-    print()
-    print("// Human-readable summary:")
-    for gi, gname in enumerate(order):
-        print(f"//   graph[{gi}] = '{gname}'  ({graph_node_counts[gi]} nodes, "
-              f"starting at global node {graph_node_offsets[gi]})")
+    text = text[:a_end] + "\n" + block + "\n\n" + text[b:]
+    with open(path, "w", newline="") as f:
+        f.write(text.replace("\n", newline))
 
 
 if __name__ == "__main__":
-    emit_all(GRAPHS, ACTIVE_GRAPHS_ORDER)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--ck", help="ck file to patch")
+    ap.add_argument("--info", help="where to write the chord table for unity")
+    args = ap.parse_args()
+
+    block, info = build(GRAPHS, ORDER)
+
+    if args.ck:
+        patch_ck(args.ck, block)
+        print("patched " + args.ck)
+    else:
+        print(block)
+
+    if args.info:
+        with open(args.info, "w", newline="") as f:
+            f.write(info)
+        print("wrote " + args.info)
