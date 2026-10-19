@@ -13,10 +13,10 @@ public class CubeSphereGenerator : MonoBehaviour
     public float duneScale = 12f;
     [Tooltip("1 = totally smooth/round. 1.3 = subtle shaping. >2 = sharp again.")]
     [Range(1f, 3f)]
-    public float duneSharpness = 1.0f;   // 1 is round dunes
+    public float duneSharpness = 1.0f;   // was 2–6; 1.0 = round dunes
     public int noiseOctaves = 5;
     public float noiseLacunarity = 2f;
-    public float noisePersistence = 0.45f; // lower is smoother
+    public float noisePersistence = 0.45f; // lower = smoother, rounder
     [Header("Biome Blend")]
     [Range(1f, 8f)] public float zoneBlendSharpness = 4f;
 
@@ -77,13 +77,13 @@ public class CubeSphereGenerator : MonoBehaviour
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
 
-        // bake the lighting into the vertex colors
+        // Bake lighting into vertex colors using the freshly-computed normals.
         Vector3[] normals = mesh.normals;
         Color[] baked = new Color[vertices.Count];
         for (int i = 0; i < vertices.Count; i++)
         {
             Vector3 radial = vertices[i].normalized;
-            // 1 on flat ground, less on slopes
+            // Flatness: 1 on flat terrain, <1 on dune slopes.
             float flatness = Mathf.Abs(Vector3.Dot(normals[i], radial));
             float lightTerm = ambientLevel + lightContribution * flatness;
             Color c = colors[i];
@@ -125,7 +125,7 @@ public class CubeSphereGenerator : MonoBehaviour
             for (int x = 0; x < resolution - 1; x++)
             {
                 int i = startIndex + y * resolution + x;
-                // triangles face inward
+                // Inward-facing winding
                 triangles.Add(i);
                 triangles.Add(i + resolution);
                 triangles.Add(i + resolution + 1);
@@ -161,7 +161,10 @@ public class CubeSphereGenerator : MonoBehaviour
         biomeColors = resized;
     }
 
-    // mixes the zone colors, closer zones count more
+    /// <summary>
+    /// Weighted blend of the 8 octant colors.
+    /// On a boundary between 2-4 octants, all contributing colors mix smoothly.
+    /// </summary>
     Color GetBlendedBiomeColor(Vector3 dir)
     {
         var zm = ZoneManager.Instance;
@@ -175,7 +178,7 @@ public class CubeSphereGenerator : MonoBehaviour
 
         for (int i = 0; i < n; i++)
         {
-            // angle between the two directions
+            // angular distance in radians
             float dot = Mathf.Clamp(Vector3.Dot(radial, zm.ZoneCenters[i]), -1f, 1f);
             float angle = Mathf.Acos(dot);
             float w = 1f / Mathf.Pow(angle + 0.02f, zoneBlendSharpness);
@@ -199,7 +202,7 @@ public class CubeSphereGenerator : MonoBehaviour
 
     float SampleDuneHeight(Vector3 p)
     {
-        // layered noise for rolling hills
+        // Standard fractal Brownian motion — smooth, rolling hills.
         float sum = 0f;
         float amplitude = 1f;
         float frequency = duneScale;
@@ -219,15 +222,18 @@ public class CubeSphereGenerator : MonoBehaviour
             frequency *= noiseLacunarity;
         }
 
-        float h = sum / totalAmplitude;
+        float h = sum / totalAmplitude;   // in [0, 1], mean ≈ 0.5
 
-        // small power to shape the hills, 1 does nothing
+        // Optional mild shaping — a SMALL power keeps things readable without
+        // sharpening peaks. Set duneSharpness to 1.0 to disable entirely.
         h = Mathf.Pow(h, duneSharpness);
 
+        // Fully uniform — no pole fade, no large-scale mask.
         return h * duneHeight;
     }
 
-    // 3D noise so it wraps around the whole sphere
+    // 3D value noise with trilinear interpolation.
+    // This is what makes the noise wrap seamlessly around the whole sphere.
     float ValueNoise3D(float x, float y, float z, int seed)
     {
         int xi = Mathf.FloorToInt(x);
@@ -237,7 +243,7 @@ public class CubeSphereGenerator : MonoBehaviour
         float yf = y - yi;
         float zf = z - zi;
 
-        // smoothstep so the cells blend
+        // Smoothstep for C1 continuity between cells
         float u = xf * xf * (3f - 2f * xf);
         float v = yf * yf * (3f - 2f * yf);
         float w = zf * zf * (3f - 2f * zf);
@@ -262,7 +268,7 @@ public class CubeSphereGenerator : MonoBehaviour
         return Mathf.Lerp(y0, y1, w);
     }
 
-    // hash that gives 0 to 1
+    // Deterministic hash → [0, 1]
     float Hash(int x, int y, int z, int seed)
     {
         unchecked

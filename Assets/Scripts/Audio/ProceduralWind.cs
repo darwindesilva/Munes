@@ -1,18 +1,14 @@
 using UnityEngine;
-using UnityEngine.Audio;
 
 [RequireComponent(typeof(AudioSource))]
 public class ProceduralWind : MonoBehaviour
 {
     [Header("Wind Character")]
     public float volume = 0.25f;
-    public float duration = 20f;         // length of the loop
+    public float duration = 20f;         // length of the generated loop
     public float lowpassCutoff = 300f;   // lower = darker, higher = airier
     public float pinkNoiseAmount = 0.7f; // 0 = white, 1 = pink-ish
     public int seed = 12345;
-
-    [Header("Mixer")]
-    public AudioMixerGroup mixerGroup;
 
     [Header("3D Sound")]
     public float minDistance = 50f;
@@ -26,7 +22,7 @@ public class ProceduralWind : MonoBehaviour
         int sampleCount = Mathf.RoundToInt(sampleRate * duration);
         float[] samples = new float[sampleCount];
 
-        // lowpass the white noise twice to get wind
+        // Two-pole lowpass on white noise → pink-ish wind
         float alpha = 1f - Mathf.Exp(-2f * Mathf.PI * lowpassCutoff / sampleRate);
         float state1 = 0f;
         float state2 = 0f;
@@ -40,7 +36,7 @@ public class ProceduralWind : MonoBehaviour
             samples[i] = Mathf.Lerp(white, state2, pinkNoiseAmount) * volume;
         }
 
-        // fade the ends so the loop doesn't click
+        // Crossfade ends for a seamless loop
         int fadeSamples = Mathf.RoundToInt(sampleRate * 0.5f);
         for (int i = 0; i < fadeSamples; i++)
         {
@@ -53,14 +49,13 @@ public class ProceduralWind : MonoBehaviour
         clip.SetData(samples, 0);
 
         src.clip = clip;
-        if (mixerGroup != null) src.outputAudioMixerGroup = mixerGroup;
         src.loop = true;
-        src.spatialBlend = 1f; // 3D
+        src.spatialBlend = 1f;                              // 3D
         src.minDistance = minDistance;
         src.maxDistance = maxDistance;
         src.rolloffMode = AudioRolloffMode.Logarithmic;
         src.volume = 1f;
-        src.dopplerLevel = 0f; // no pitch shift
+        src.dopplerLevel = 0f;                              // ambient — no pitch shift
         src.Play();
     }
 }

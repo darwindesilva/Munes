@@ -56,7 +56,7 @@ public class ZoneManager : MonoBehaviour
         }
     }
 
-    // zone whose center is closest to this direction
+    /// <summary>Return the zone index nearest to the given radial direction.</summary>
     public int GetZoneForDirection(Vector3 radial)
     {
         if (ZoneCenters == null || ZoneCenters.Length == 0) return 0;

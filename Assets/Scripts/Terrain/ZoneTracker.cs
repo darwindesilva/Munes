@@ -33,7 +33,7 @@ public class ZoneTracker : MonoBehaviour
             PreviousZone = CurrentZone;
             CurrentZone = z;
             JustChangedZone = true;
-            changeCooldown = 0.25f;   // small delay so it doesn't flicker on a border
+            changeCooldown = 0.25f;   // debounce so we don't flicker on a boundary
         }
         else
         {

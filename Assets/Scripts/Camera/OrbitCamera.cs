@@ -4,14 +4,14 @@ public class OrbitCamera : MonoBehaviour
 {
     [Header("Target")]
     public Transform target;                 // PlayerBall
-    public Renderer ballRenderer;            // ball renderer, hidden in first person
+    public Renderer ballRenderer;            // The ball mesh's Renderer (hidden in first person)
 
     [Header("Third Person")]
     public float thirdPersonDistance = 8f;
     public float thirdPersonHeight = 2f;
 
     [Header("First Person")]
-    public float fpForwardOffset = 0.4f;     // push forward a bit so the camera sits inside the ball
+    public float fpForwardOffset = 0.4f;     // Slight forward push so we're inside the ball
 
     [Header("Rotation")]
     public float mouseSensitivity = 3f;
@@ -55,7 +55,7 @@ public class OrbitCamera : MonoBehaviour
         {
             firstPerson = !firstPerson;
             ApplyModeVisuals();
-            initialized = false; // snap the camera next frame
+            initialized = false; // snap camera on next frame after toggle
         }
     }
 
@@ -69,12 +69,12 @@ public class OrbitCamera : MonoBehaviour
     {
         if (target == null) return;
 
-        // mouse
+        // Mouse input
         yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
         pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
         pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
-        // smooth the up direction
+        // Smooth local up
         Vector3 targetUp = gravity.GetUp(target.position);
         if (targetUp.sqrMagnitude > 0.0001f)
         {
@@ -84,7 +84,7 @@ public class OrbitCamera : MonoBehaviour
                 currentUp = targetUp;
         }
 
-        // local frame
+        // Build local frame
         Vector3 localFwd = Vector3.ProjectOnPlane(Vector3.forward, currentUp);
         if (localFwd.sqrMagnitude < 0.01f)
             localFwd = Vector3.ProjectOnPlane(Vector3.right, currentUp);
@@ -99,7 +99,7 @@ public class OrbitCamera : MonoBehaviour
 
         if (firstPerson)
         {
-            // camera at the ball, looking forward
+            // Camera sits at ball center, looking along lookDir
             Vector3 desiredPos = target.position + lookDir * fpForwardOffset;
             Quaternion desiredRot = Quaternion.LookRotation(lookDir, currentUp);
 
@@ -119,13 +119,13 @@ public class OrbitCamera : MonoBehaviour
         }
         else
         {
-            // camera behind the ball
+            // Third person: behind the ball, opposite the pitch direction
             Vector3 backDir = pitchRot * (-yawedFwd);
             Vector3 desiredPos = target.position
                                + backDir * thirdPersonDistance
                                + currentUp * thirdPersonHeight;
 
-            // pull the camera in if something blocks it
+            // Collision: pull camera in if a wall is in the way
             Vector3 dir = desiredPos - target.position;
             if (Physics.SphereCast(
                     target.position, collisionRadius, dir.normalized,
