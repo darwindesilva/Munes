@@ -1,28 +1,30 @@
 using UnityEngine;
+using UnityEngine.Audio;
 
 [RequireComponent(typeof(ChuckSubInstance))]
 public class ChunityMusicBridge : MonoBehaviour
 {
     [Header("ChucK")]
     public string chuckScriptFile = "munes_music.ck";
-    public float updateInterval = 0.05f; // 20 Hz
+    public float updateInterval = 0.05f;
 
     [Header("Gameplay References")]
     public BallController ball;
-    public ZoneTracker zoneTracker;
     public RadialGravity gravity;
+
+    [Header("Mixer (optional)")]
+    public AudioMixer mixer;
+    public string reverbParam = "ChucKReverbWet";
 
     private ChuckSubInstance chuck;
     private float timer;
 
-    // Cached strings (avoid GC in the hot path)
     private const string SPEED = "in_speed";
     private const string GROUNDED = "in_grounded";
     private const string TAKEOFF = "in_takeoff";
     private const string LANDED = "in_landed";
     private const string HEIGHT = "in_height";
     private const string TIME_TO_LAND = "in_timeToLand";
-    private const string ZONE = "in_zone";
 
     void Start()
     {
@@ -38,7 +40,6 @@ public class ChunityMusicBridge : MonoBehaviour
         if (timer < updateInterval) return;
         timer = 0f;
 
-        // --- Continuous inputs ---
         float speed = ball.GetComponent<Rigidbody>().linearVelocity.magnitude;
         float height = 0f;
         if (gravity != null && gravity.sphereCenter != null)
@@ -48,15 +49,11 @@ public class ChunityMusicBridge : MonoBehaviour
                 height = Mathf.Max(0f, hit.distance - 1f);
         }
 
-        int zone = zoneTracker != null ? zoneTracker.CurrentZone : 0;
-
         chuck.SetFloat(SPEED, speed);
         chuck.SetInt(GROUNDED, ball.IsGrounded ? 1 : 0);
         chuck.SetFloat(HEIGHT, height);
         chuck.SetFloat(TIME_TO_LAND, ball.PredictTimeToLand());
-        chuck.SetInt(ZONE, zone);
 
-        // --- One-shot events ---
         if (ball.JustTookOff)
         {
             chuck.SetInt(TAKEOFF, 1);
@@ -66,6 +63,12 @@ public class ChunityMusicBridge : MonoBehaviour
         {
             chuck.SetInt(LANDED, 1);
             Invoke(nameof(ResetLanded), 0.2f);
+        }
+
+        if (mixer != null)
+        {
+            float wet = Mathf.Lerp(-12f, -2f, Mathf.Clamp01(height / 150f));
+            mixer.SetFloat(reverbParam, wet);
         }
     }
 
