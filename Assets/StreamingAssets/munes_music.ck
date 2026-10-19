@@ -1,44 +1,44 @@
-//Unity inputs
+// ============================================================
+// Munes Music v17 — chords + bass only, no arp/percussion
+// ============================================================
+
+// ---- Unity inputs ----
 global float in_speed;
-global int in_grounded;
-global int in_takeoff;
-global int in_landed;
+global int   in_grounded;
+global int   in_takeoff;
+global int   in_landed;
 global float in_height;
 global float in_timeToLand;
-global int in_quadrant;
+global int   in_zone;
 
-//tune stuff here
+// ---- Tunables ----
 150.0 => float HEIGHT_TOP;
-0.06 => float BASE_VOICE_GAIN;
-0.20 => float BASS_VOICE_GAIN;
-0.02 => float MIN_SLIDE_RATE;
-0.60 => float MAX_SLIDE_RATE;
-400 => int MIN_SLIDE_MS;
-10000 => int MAX_SLIDE_MS;
-3 => int OCTAVES;
-100 => int MIN_AIRTIME_MS;
-5.0 => float MIN_TRIGGER_HEIGHT;
-6000 => int FADE_AFTER_MS;
-2000 => int FADE_DURATION_MS;
+0.06  => float BASE_VOICE_GAIN;
+0.20  => float BASS_VOICE_GAIN;
+0.02  => float MIN_SLIDE_RATE;
+0.60  => float MAX_SLIDE_RATE;
+400   => int   MIN_SLIDE_MS;
+10000 => int   MAX_SLIDE_MS;
+3     => int   OCTAVES;
+100   => int   MIN_AIRTIME_MS;
+5.0   => float MIN_TRIGGER_HEIGHT;
+6000  => int   FADE_AFTER_MS;
+2000  => int   FADE_DURATION_MS;
 
-
-//--------------------------- PASTE PYTHON BLOCK BELOW --------------------------
-
-
+// ============================================================
+// --------- PASTE GENERATED BLOCK BELOW THIS LINE -----------
+// ============================================================
 
 5 => int NOTES_PER_CHORD;
-7 => int NODE_COUNT;
-12 => int CHORD_COUNT;
+18 => int NODE_COUNT;
+21 => int CHORD_COUNT;
+3 => int NUM_GRAPHS;
 
-// Graph: 'dar'
-//    0  A1          [C3,E3,G3,B3,x] -> [C3,E3,G3,B3,D3]  → A2
-//    1  A2          [D3,F3,A3,C3,x] -> [D3,F3,A3,C3,E4]  → A3
-//    2  A3          [C3,G3,E4,x,x] -> [C3,G3,B3,x,x]  → A4
-//    3  A4          [C3,E3,G3,A3,x]  → A5
-//    4  A5          [D3,F3,A3,C4,x]  → A1, B1, C1
-//    5  B1          [A3,C4,E4,x,x] -> [A3,C4,E4,G4,B4]  → A2
-//    6  C1          [F3,A3,x,A4,x] -> [D3,F3,x,C5,x]  → A1, B1
+// Graph → [start global node, count]
+[0, 5, 13] @=> int GRAPH_NODE_OFFSETS[];
+[5, 8, 5]  @=> int GRAPH_NODE_COUNTS[];
 
+// All chords (global indices)
 [
    48,  52,  55,  59,  -1,  //  0
    48,  52,  55,  59,  50,  //  1
@@ -48,49 +48,66 @@ global int in_quadrant;
    48,  55,  59,  -1,  -1,  //  5
    48,  52,  55,  57,  -1,  //  6
    50,  53,  57,  60,  -1,  //  7
-   57,  60,  64,  -1,  -1,  //  8
-   57,  60,  64,  67,  71,  //  9
-   53,  57,  -1,  69,  -1,  // 10
-   50,  53,  -1,  72,  -1,  // 11
+   50,  53,  57,  60,  -1,  //  8
+   55,  59,  62,  65,  -1,  //  9
+   48,  52,  55,  59,  -1,  // 10
+   45,  48,  52,  55,  -1,  // 11
+   50,  54,  57,  60,  -1,  // 12
+   43,  47,  50,  54,  -1,  // 13
+   53,  57,  60,  64,  -1,  // 14
+   52,  55,  59,  62,  -1,  // 15
+   48,  52,  55,  59,  -1,  // 16
+   52,  55,  59,  62,  -1,  // 17
+   45,  48,  52,  55,  -1,  // 18
+   40,  44,  47,  50,  -1,  // 19
+   45,  48,  52,  -1,  -1,  // 20
 ] @=> int CHORDS[];
 
-[ 36,  36,  38,  38,  43,  43,  36,  38,  45,  45,  38,  38] @=> int BASS_NOTES[];
+[ 36,  36,  38,  38,  43,  43,  36,  38,  38,  31,  36,  33,  38,  31,  29,  40,  36,  40,  33,  40,  33] @=> int BASS_NOTES[];
 
-[0, 2, 4, 6, 7, 8, 10] @=> int NODE_CHORD_OFFSETS[];
-[2, 2, 2, 1, 1, 2, 2] @=> int NODE_CHORD_COUNTS[];
+[0, 2, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] @=> int NODE_CHORD_OFFSETS[];
+[2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] @=> int NODE_CHORD_COUNTS[];
 
-[0, 1, 2, 3, 4, 7, 8] @=> int SUCC_OFFSETS[];
-[1, 1, 1, 1, 3, 1, 2] @=> int SUCC_COUNTS[];
-[1, 2, 3, 4, 0, 5, 6, 1, 0, 5] @=> int SUCC_TARGETS[];
+[0, 1, 2, 3, 4, 5, 7, 9, 11, 13, 15, 17, 19, 21, 22, 23, 24, 25] @=> int SUCC_OFFSETS[];
+[1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2] @=> int SUCC_COUNTS[];
+[1, 2, 3, 4, 0, 6, 7, 7, 5, 8, 5, 9, 10, 10, 8, 7, 8, 6, 12, 8, 5, 14, 15, 16, 17, 14, 13] @=> int SUCC_TARGETS[];
 
-// -------------------------------- END OF PYTHON BLOCK -----------------------------
+// Human-readable summary:
+//   graph[0] = 'dar'  (5 nodes, starting at global node 0)
+//   graph[1] = 'jazz'  (8 nodes, starting at global node 5)
+//   graph[2] = 'hinge_to_Am'  (5 nodes, starting at global node 13)
 
+// ============================================================
+// --------- END OF GENERATED BLOCK --------------------------
+// ============================================================
 
+// ---- Voice pool ----
 64 => int MAX_VOICES;
 TriOsc voices[MAX_VOICES];
-LPF filters[MAX_VOICES];
+LPF    filters[MAX_VOICES];
 
 int VOICE_COUNT;
 NOTES_PER_CHORD * OCTAVES => VOICE_COUNT;
 int TOTAL_VOICES;
-VOICE_COUNT + 1 => TOTAL_VOICES; //for the ground bass
+VOICE_COUNT + 1 => TOTAL_VOICES;
 int BASS_IDX;
 VOICE_COUNT => BASS_IDX;
 
 for (0 => int i; i < TOTAL_VOICES; i++) {
     new TriOsc @=> voices[i];
-    new LPF @=> filters[i];
+    new LPF    @=> filters[i];
     voices[i] => filters[i] => dac;
     3000.0 => filters[i].freq;
     Std.mtof(60) => voices[i].freq;
     0.0 => voices[i].gain;
 }
-<<< "voice pool:", TOTAL_VOICES, "| chord voices:", VOICE_COUNT, "| chords:", CHORD_COUNT >>>;
+<<< "voice pool:", TOTAL_VOICES, "| chord voices:", VOICE_COUNT, "| chords:", CHORD_COUNT, "| graphs:", NUM_GRAPHS >>>;
 
-//State
-0 => int currentNodeIdx;
-0 => int currentChordInNode;
-0 => int currentChordIdx;
+// ---- State ----
+int currentGraphIdx;
+int currentNodeIdx;
+int currentChordInNode;
+int currentChordIdx;
 
 float currentFreqs[64];
 float targetFreqs[64];
@@ -98,25 +115,28 @@ float currentGains[64];
 float targetGains[64];
 float fadeMultiplier[64];
 
-int sliding;
-int slideElapsedMs;
-int slideTotalMs;
+int   sliding;
+int   slideElapsedMs;
+int   slideTotalMs;
 float slideFreqLerp;
 
-int msSinceTakeoff;
-int pendingChange;
-int msSinceLastChange;
+int   msSinceTakeoff;
+int   pendingChange;
+int   msSinceLastChange;
 float fadeAmplitude;
 
-//Helpers
+int   lastZone;
 
+// ---- Helpers ----
 fun float absFloat(float x) {
     if (x < 0.0) return -x;
     return x;
 }
 
-fun int chordGlobalIdx(int nodeIdx, int chordInNode) {
-    return NODE_CHORD_OFFSETS[nodeIdx] + chordInNode;
+fun int graphFirstNode(int graphIdx) {
+    if (graphIdx < 0) { 0 => graphIdx; }
+    if (graphIdx >= NUM_GRAPHS) { NUM_GRAPHS - 1 => graphIdx; }
+    return GRAPH_NODE_OFFSETS[graphIdx];
 }
 
 fun void computeTargets(int chordIdx) {
@@ -166,8 +186,11 @@ fun int pickSuccessorNode(int fromNode) {
     return SUCC_TARGETS[SUCC_OFFSETS[fromNode] + idx];
 }
 
+fun int globalChordFor(int nodeIdx, int chordInNode) {
+    return NODE_CHORD_OFFSETS[nodeIdx] + chordInNode;
+}
+
 fun void beginSlideTo(int chordIdx, int ttlMs) {
-    //Save old targets to detect empty to note transitions
     float oldTargets[64];
     for (0 => int i; i < TOTAL_VOICES; i++) {
         targetFreqs[i] => oldTargets[i];
@@ -175,7 +198,6 @@ fun void beginSlideTo(int chordIdx, int ttlMs) {
 
     computeTargets(chordIdx);
 
-    //Snap frequencies for channels that were silent in the old chord but have a note in the new one
     for (0 => int i; i < TOTAL_VOICES; i++) {
         if (oldTargets[i] < 0.0 && targetFreqs[i] > 0.0) {
             targetFreqs[i] => currentFreqs[i];
@@ -201,11 +223,11 @@ fun void beginSlideTo(int chordIdx, int ttlMs) {
     <<< "CHANGE → chord", currentChordIdx, "over", slideTotalMs, "ms" >>>;
 }
 
-
-//Init
-0 => currentNodeIdx;
+// ---- Init ----
+0 => currentGraphIdx;
+graphFirstNode(currentGraphIdx) => currentNodeIdx;
 0 => currentChordInNode;
-chordGlobalIdx(currentNodeIdx, currentChordInNode) => currentChordIdx;
+globalChordFor(currentNodeIdx, currentChordInNode) => currentChordIdx;
 computeTargets(currentChordIdx);
 
 in_height => float hRaw;
@@ -229,16 +251,32 @@ for (0 => int i; i < TOTAL_VOICES; i++) {
 0 => pendingChange;
 0 => msSinceLastChange;
 1.0 => fadeAmplitude;
+in_zone => lastZone;
 
-<<< "Munes Music starting" >>>;
+<<< "=== Munes Music v17 starting ===" >>>;
 
-
-// Main loop
-
+// ---- Main loop ----
 while (true) {
 
     if (in_grounded == 0) { msSinceTakeoff + 50 => msSinceTakeoff; }
     else                  { msSinceLastChange + 50 => msSinceLastChange; }
+
+    // Zone change → switch graph
+    if (in_zone != lastZone) {
+        in_zone => lastZone;
+        in_zone % NUM_GRAPHS => int newGraphIdx;
+        if (newGraphIdx != currentGraphIdx) {
+            newGraphIdx => currentGraphIdx;
+            graphFirstNode(currentGraphIdx) => currentNodeIdx;
+            0 => currentChordInNode;
+            globalChordFor(currentNodeIdx, currentChordInNode) => int targetChord;
+            in_timeToLand => float ttl2;
+            if (ttl2 < 0.0) { 4.0 => ttl2; }
+            (ttl2 * 1000.0) $ int => int ttl2Ms;
+            beginSlideTo(targetChord, ttl2Ms);
+            <<< "ZONE →", in_zone, "| graph:", currentGraphIdx >>>;
+        }
+    }
 
     if (in_takeoff == 1) {
         0 => msSinceTakeoff;
@@ -258,7 +296,7 @@ while (true) {
             0 => nextChordInNode;
         }
         nextChordInNode => currentChordInNode;
-        chordGlobalIdx(currentNodeIdx, currentChordInNode) => int nextChordIdx;
+        globalChordFor(currentNodeIdx, currentChordInNode) => int nextChordIdx;
 
         in_timeToLand => float ttl;
         if (ttl < 0.0) { 4.0 => ttl; }
@@ -277,7 +315,7 @@ while (true) {
         0 => msSinceTakeoff;
     }
 
-    //Symmetric fadeout/fadein
+    // Symmetric fade
     1.0 => float targetFade;
     if (in_grounded == 1 && sliding == 0 && pendingChange == 0) {
         if (msSinceLastChange >= FADE_AFTER_MS) {
@@ -305,7 +343,11 @@ while (true) {
     if (h > 1.0) { 1.0 => h; }
     updateGains(h);
 
-    //Frequency slide
+    // Filter brightness by speed
+    (2500.0 + in_speed * 50.0) => float baseFilt;
+    if (baseFilt > 8000.0) { 8000.0 => baseFilt; }
+
+    // Frequency slide
     0.15 => float baseLerp;
     for (0 => int i; i < TOTAL_VOICES; i++) {
         if (targetFreqs[i] > 0) {
@@ -313,6 +355,7 @@ while (true) {
             if (sliding == 1) { slideFreqLerp => thisLerp; }
             currentFreqs[i] + (targetFreqs[i] - currentFreqs[i]) * thisLerp => currentFreqs[i];
             currentFreqs[i] => voices[i].freq;
+            if (i < VOICE_COUNT) { baseFilt => filters[i].freq; }
         }
     }
 
@@ -321,7 +364,7 @@ while (true) {
         if (slideElapsedMs >= slideTotalMs) { 0 => sliding; }
     }
 
-    //Gain smoothing * fade multiplier
+    // Gain smoothing
     0.08 => float gainLerp;
     for (0 => int i; i < TOTAL_VOICES; i++) {
         currentGains[i] + (targetGains[i] - currentGains[i]) * gainLerp => currentGains[i];

@@ -17,6 +17,8 @@ public class CubeSphereGenerator : MonoBehaviour
     public int noiseOctaves = 5;
     public float noiseLacunarity = 2f;
     public float noisePersistence = 0.45f; // lower = smoother, rounder
+    [Header("Biome Blend")]
+    [Range(1f, 8f)] public float zoneBlendSharpness = 4f;
 
     [Header("Biome Colors (8 octants)")]
     [Tooltip("Index = (x+ ? 1 : 0) | (y+ ? 2 : 0) | (z+ ? 4 : 0)")]
@@ -165,38 +167,35 @@ public class CubeSphereGenerator : MonoBehaviour
     /// </summary>
     Color GetBlendedBiomeColor(Vector3 dir)
     {
-        // Per-axis soft weights in [0,1]
-        float wxp = (dir.x + 1f) * 0.5f; float wxn = 1f - wxp;
-        float wyp = (dir.y + 1f) * 0.5f; float wyn = 1f - wyp;
-        float wzp = (dir.z + 1f) * 0.5f; float wzn = 1f - wzp;
+        var zm = ZoneManager.Instance;
+        if (zm == null || zm.ZoneCenters == null || zm.ZoneCenters.Length == 0)
+            return Color.gray;
 
-        // Joint weight for each octant (index bits: x+, y+, z+)
-        float[] w = new float[8];
-        w[0] = wxn * wyn * wzn;
-        w[1] = wxp * wyn * wzn;
-        w[2] = wxn * wyp * wzn;
-        w[3] = wxp * wyp * wzn;
-        w[4] = wxn * wyn * wzp;
-        w[5] = wxp * wyn * wzp;
-        w[6] = wxn * wyp * wzp;
-        w[7] = wxp * wyp * wzp;
-
-        // Sharpen (controls how "octant-y" vs "blurry" the borders are)
+        Vector3 radial = dir.normalized;
+        int n = zm.ZoneCenters.Length;
+        float[] weights = new float[n];
         float total = 0f;
-        for (int i = 0; i < 8; i++)
+
+        for (int i = 0; i < n; i++)
         {
-            w[i] = Mathf.Pow(w[i], biomeBlendSharpness);
-            total += w[i];
+            // angular distance in radians
+            float dot = Mathf.Clamp(Vector3.Dot(radial, zm.ZoneCenters[i]), -1f, 1f);
+            float angle = Mathf.Acos(dot);
+            float w = 1f / Mathf.Pow(angle + 0.02f, zoneBlendSharpness);
+            weights[i] = w;
+            total += w;
         }
-        if (total < 1e-5f) return biomeColors[0];
+
+        if (total <= 0f) return zm.GetColor(0);
 
         float r = 0f, g = 0f, b = 0f;
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < n; i++)
         {
-            float wi = w[i] / total;
-            r += biomeColors[i].r * wi;
-            g += biomeColors[i].g * wi;
-            b += biomeColors[i].b * wi;
+            float w = weights[i] / total;
+            Color c = zm.GetColor(i);
+            r += c.r * w;
+            g += c.g * w;
+            b += c.b * w;
         }
         return new Color(r, g, b, 1f);
     }

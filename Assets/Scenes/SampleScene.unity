@@ -131,7 +131,6 @@ GameObject:
   - component: {fileID: 317585496}
   - component: {fileID: 317585495}
   - component: {fileID: 317585500}
-  - component: {fileID: 317585501}
   m_Layer: 0
   m_Name: PlayerBall
   m_TagString: Untagged
@@ -221,27 +220,14 @@ MonoBehaviour:
   airStrafeAcceleration: 8
   airStrafeMaxSpeed: 25
   slamForce: 45
-  jumpForce: 20
-  jumpCooldown: 0.3
-  groundCheckDistance: 1.5
+  jumpForce: 10
+  jumpCooldown: 0.2
+  groundCheckDistance: 1.25
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
-  landingMomentumPreserve: 0.5
+  landingMomentumPreserve: 0.9
   drawGizmos: 1
---- !u!114 &317585501
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 317585494}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f07c3f2f8e3569d4a8955b97be1b6425, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuadrantTracker
-  sphereCenter: {fileID: 1140669849}
 --- !u!1 &383404076
 GameObject:
   m_ObjectHideFlags: 0
@@ -386,6 +372,61 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &392468991
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 392468992}
+  - component: {fileID: 392468993}
+  m_Layer: 0
+  m_Name: ZoneManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &392468992
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 392468991}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3505464.2, y: -0.03254, z: 2516409.2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &392468993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 392468991}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50373976b16cf3f448d50b847e139bf5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneManager
+  zoneCount: 6
+  zoneSeed: 0
+  zoneColors:
+  - {r: 0.8, g: 0.45, b: 0.25, a: 1}
+  - {r: 0.55, g: 0.6, b: 0.65, a: 1}
+  - {r: 0.45, g: 0.3, b: 0.5, a: 1}
+  - {r: 0.76, g: 0.7, b: 0.5, a: 1}
+  - {r: 0.3, g: 0.55, b: 0.4, a: 1}
+  - {r: 0.85, g: 0.35, b: 0.35, a: 1}
+  - {r: 0.65, g: 0.65, b: 0.3, a: 1}
+  - {r: 0.4, g: 0.4, b: 0.75, a: 1}
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -859,6 +900,7 @@ MonoBehaviour:
   noiseOctaves: 3
   noiseLacunarity: 2
   noisePersistence: 0.3
+  zoneBlendSharpness: 4
   biomeColors:
   - {r: 0, g: 0, b: 0.8039216, a: 1}
   - {r: 0.1176471, g: 0.5647059, b: 1, a: 1}
@@ -994,7 +1036,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5029265624e69cf44b5623e869d18f44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RadialGravity
-  gravityStrength: 9.81
+  gravityStrength: 7.75
   sphereCenter: {fileID: 1140669849}
 --- !u!4 &1463069395
 Transform:
@@ -1172,7 +1214,7 @@ MonoBehaviour:
   chuckScriptFile: munes_music.ck
   updateInterval: 0.05
   ball: {fileID: 317585500}
-  quadrant: {fileID: 317585501}
+  zoneTracker: {fileID: 0}
   gravity: {fileID: 1463069394}
 --- !u!114 &1629533193
 MonoBehaviour:
@@ -1198,3 +1240,4 @@ SceneRoots:
   - {fileID: 727478190}
   - {fileID: 383404079}
   - {fileID: 1629533191}
+  - {fileID: 392468992}
