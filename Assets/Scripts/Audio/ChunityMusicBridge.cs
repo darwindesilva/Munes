@@ -4,15 +4,12 @@ using UnityEngine.Audio;
 [RequireComponent(typeof(ChuckSubInstance))]
 public class ChunityMusicBridge : MonoBehaviour
 {
-    [Header("ChucK")]
     public string chuckScriptFile = "munes_music.ck";
     public float updateInterval = 0.05f;
 
-    [Header("Gameplay References")]
     public BallController ball;
     public RadialGravity gravity;
 
-    [Header("Mixer (optional)")]
     public AudioMixer mixer;
     public string reverbParam = "ChucKReverbWet";
 
@@ -54,6 +51,7 @@ public class ChunityMusicBridge : MonoBehaviour
         chuck.SetFloat(HEIGHT, height);
         chuck.SetFloat(TIME_TO_LAND, ball.PredictTimeToLand());
 
+        // one shot events
         if (ball.JustTookOff)
         {
             chuck.SetInt(TAKEOFF, 1);
@@ -65,6 +63,7 @@ public class ChunityMusicBridge : MonoBehaviour
             Invoke(nameof(ResetLanded), 0.2f);
         }
 
+        // reverb wet level follows height
         if (mixer != null)
         {
             float wet = Mathf.Lerp(-12f, -2f, Mathf.Clamp01(height / 150f));

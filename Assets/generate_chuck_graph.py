@@ -136,24 +136,21 @@ def main():
     print(f"{notes_per_chord} => int NOTES_PER_CHORD;")
     print(f"{n_nodes} => int NODE_COUNT;")
     print(f"{n_chords} => int CHORD_COUNT;")
-    print("\n[")
-    for i, c in enumerate(all_chords):
+    print()
+    print("[")
+    for c in all_chords:
         padded = c + [-1] * (notes_per_chord - len(c))
-        print(f"  {', '.join(f'{m:3d}' for m in padded)},  // {i:2d}")
+        print("   " + ", ".join(f"{m:3d}" for m in padded) + ",")
     print("] @=> int CHORDS[];")
-    print(f"\n[{', '.join(f'{m:3d}' for m in all_bass)}] @=> int BASS_NOTES[];")
-    print(f"\n[{', '.join(map(str, node_chord_offsets))}] @=> int NODE_CHORD_OFFSETS[];")
-    print(f"[{', '.join(map(str, node_chord_counts))}] @=> int NODE_CHORD_COUNTS[];")
-    print(f"\n[{', '.join(map(str, succ_offsets))}] @=> int SUCC_OFFSETS[];")
-    print(f"[{', '.join(map(str, succ_counts))}] @=> int SUCC_COUNTS[];")
-    print(f"[{', '.join(map(str, succ_targets))}] @=> int SUCC_TARGETS[];")
-    print("\n// Progression summary:")
-    for i, n in enumerate(nodes):
-        succ_preview = ", ".join(n["successors"][:3])
-        if len(n["successors"]) > 3:
-            succ_preview += f", ... ({len(n['successors'])} total)"
-        print(f"//   {i:3d}  {n['name']:22s} → {succ_preview}")
-
+    print()
+    print("[" + ", ".join(f"{m:3d}" for m in all_bass) + "] @=> int BASS_NOTES[];")
+    print()
+    print("[" + ", ".join(map(str, node_chord_offsets)) + "] @=> int NODE_CHORD_OFFSETS[];")
+    print("[" + ", ".join(map(str, node_chord_counts)) + "] @=> int NODE_CHORD_COUNTS[];")
+    print()
+    print("[" + ", ".join(map(str, succ_offsets)) + "] @=> int SUCC_OFFSETS[];")
+    print("[" + ", ".join(map(str, succ_counts)) + "] @=> int SUCC_COUNTS[];")
+    print("[" + ", ".join(map(str, succ_targets)) + "] @=> int SUCC_TARGETS[];")
 
 if __name__ == "__main__":
     main()

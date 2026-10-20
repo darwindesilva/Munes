@@ -62,9 +62,7 @@ public class BallController : MonoBehaviour
         rb.useGravity = false;
         rb.constraints = RigidbodyConstraints.None;
 
-        // Assign a low-friction Physic Material so Unity doesn't kill
-        // tangential momentum on collision. Rolling is still visually
-        // correct because the code applies forces along the surface.
+        // low friction so the ball keeps speed when it hits the ground
         var col = GetComponent<Collider>();
         if (col != null)
         {
@@ -111,11 +109,12 @@ public class BallController : MonoBehaviour
         jumpLatched = false;
         slamLatched = false;
 
-        //store velocity before ground collision for landing preservation
+        // save velocity before collision so we can restore some of it
         preLandingVelocity = rb.linearVelocity;
 
         rb.AddForce(gravityDir * gravity.gravityStrength, ForceMode.Acceleration);
 
+        // sphere cast down for ground
         float ballRadius = transform.localScale.x * 0.5f;
         bool groundedNow = Physics.SphereCast(
             transform.position,
@@ -132,11 +131,12 @@ public class BallController : MonoBehaviour
         bool wasGrounded = isGrounded;
         isGrounded = groundedNow;
 
+        // landed
         if (isGrounded && !wasGrounded)
         {
             justLandedTimer = 0.15f;
 
-            //momentum preservation: restore a fraction of the tangential velocity that was lost during the collision response.
+            // put back some of the horizontal speed the collision ate
             Vector3 preTangential = Vector3.ProjectOnPlane(preLandingVelocity, gravityDir);
             Vector3 postTangential = Vector3.ProjectOnPlane(rb.linearVelocity, gravityDir);
             float lostSpeed = preTangential.magnitude - postTangential.magnitude;
@@ -148,6 +148,8 @@ public class BallController : MonoBehaviour
 
             OnLanded();
         }
+
+        // took off
         if (!isGrounded && wasGrounded)
         {
             justTookOffTimer = 0.15f;
@@ -160,13 +162,14 @@ public class BallController : MonoBehaviour
         if (isGrounded) HandleGroundMovement(hit.normal);
         else HandleAirMovement();
 
+        // jump
         if (jumpNow && isGrounded && Time.time - lastJumpTime > jumpCooldown)
         {
             rb.AddForce(localUp * jumpForce, ForceMode.Impulse);
             lastJumpTime = Time.time;
         }
 
-        //90% vertical slam
+        // slam mostly downward with a bit of forward push
         if (slamNow && !isGrounded)
         {
             Vector3 camFwd = cam.transform.forward;
@@ -192,9 +195,11 @@ public class BallController : MonoBehaviour
 
         rb.AddForce(moveDir * moveForce, ForceMode.Force);
 
+        // friction
         Vector3 horizontalVel = Vector3.ProjectOnPlane(rb.linearVelocity, groundNormal);
         rb.AddForce(-horizontalVel * groundFriction, ForceMode.Force);
 
+        // cap speed
         if (rb.linearVelocity.magnitude > maxGroundSpeed)
         {
             rb.linearVelocity = rb.linearVelocity.normalized * maxGroundSpeed;
@@ -233,6 +238,7 @@ public class BallController : MonoBehaviour
         float distanceToSurface = hit.distance - ballRadius;
         if (distanceToSurface < 0.05f) return 0f;
 
+        // solve for t in d = v0*t + 0.5*a*t^2
         float v0 = Vector3.Dot(rb.linearVelocity, gDir);
         float a = gravity.gravityStrength * 0.5f;
         float b = v0;
